@@ -18,7 +18,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const request = ctx.getRequest<Request>();
 
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
-    let message = 'Internal server error';
+    let message = 'Unknown error occurred';
     let errors: any = null;
 
     if (exception instanceof HttpException) {
@@ -39,11 +39,10 @@ export class HttpExceptionFilter implements ExceptionFilter {
     );
 
     response.status(status).json({
-      statusCode: status,
+      success: false,
       message,
-      errors,
+      errors: errors ?? undefined,
       path: request.url,
-      method: request.method,
       timestamp: new Date().toISOString(),
     });
   }
