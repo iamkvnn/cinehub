@@ -1,7 +1,7 @@
-import { ApiResponse, PaginatedApiResponse } from "../dto";
+import { ApiResponseDto, PaginatedApiResponseDto } from "../dto";
 
-export function createApiResponse(data: any): ApiResponse {
-  const response = new ApiResponse();
+export function createApiResponse(data: any): ApiResponseDto {
+  const response = new ApiResponseDto();
   response.data = data;
   return response;
 }
@@ -10,12 +10,13 @@ export function createPaginatedApiResponse(
   data: any[],
   totalItems: number,
   currentPage: number,
-  totalPages: number,
-): PaginatedApiResponse {
-  const response = new PaginatedApiResponse();
+  itemsPerPage: number,
+): PaginatedApiResponseDto {
+  const response = new PaginatedApiResponseDto();
   response.data = data;
   response.totalItems = totalItems;
   response.currentPage = currentPage;
-  response.totalPages = totalPages;
+  response.totalPages = Math.ceil(totalItems / itemsPerPage);
+  response.itemsPerPage = itemsPerPage;
   return response;
 }

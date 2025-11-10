@@ -35,7 +35,6 @@ async function bootstrap() {
     .setDescription('The CineHub API description')
     .addBearerAuth()
     .setVersion('1.0')
-    .addTag('cinehub')
     .build();
   const documentFactory = () => SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/v1/api-docs', app, documentFactory);

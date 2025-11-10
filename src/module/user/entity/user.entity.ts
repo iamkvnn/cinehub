@@ -11,4 +11,13 @@ export class UserEntity extends BaseEntity {
 
   @Column()
   password: string;
+
+  @Column({ default: false })
+  isVerified: boolean;
+
+  @Column({ nullable: true })
+  otp?: string;
+
+  @Column({ nullable: true })
+  otpExpiresAt?: Date;
 }
