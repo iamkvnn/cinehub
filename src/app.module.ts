@@ -6,7 +6,7 @@ import config from './config/config';
 import { DatabaseModule } from './core/database/database.module';
 import { HealthcheckModule } from './core/health/healthcheck.module';
 
-@Module({ 
+@Module({
   imports: [
     ConfigModule.forRoot({
       load: [config],
@@ -15,7 +15,7 @@ import { HealthcheckModule } from './core/health/healthcheck.module';
     DatabaseModule,
     HealthcheckModule,
     AuthModule,
-    UserModule
+    UserModule,
   ],
 })
 export class AppModule {}

@@ -1,10 +1,12 @@
-import { NestFactory, Reflector } from '@nestjs/core';
+import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ConsoleLogger, ValidationPipe, VersioningType } from '@nestjs/common';
 import { validationPipeOptions } from './common/pipe';
 import { HttpExceptionFilter } from './common/filter';
-import { HttpLoggingInterceptor, ResponseTransformInterceptor } from './common/interceptor';
-import { JwtAuthGuard } from './common/guard';
+import {
+  HttpLoggingInterceptor,
+  ResponseTransformInterceptor,
+} from './common/interceptor';
 import { DocumentBuilder } from '@nestjs/swagger/dist/document-builder';
 import { SwaggerModule } from '@nestjs/swagger/dist/swagger-module';
 declare const module: any;
@@ -19,13 +21,16 @@ async function bootstrap() {
   app.enableCors();
   app.setGlobalPrefix('api');
   app.enableVersioning({
-    type:  VersioningType.URI,
+    type: VersioningType.URI,
     defaultVersion: '1',
   });
 
   app.useGlobalPipes(new ValidationPipe(validationPipeOptions));
   app.useGlobalFilters(new HttpExceptionFilter());
-  app.useGlobalInterceptors(new HttpLoggingInterceptor(), new ResponseTransformInterceptor());
+  app.useGlobalInterceptors(
+    new HttpLoggingInterceptor(),
+    new ResponseTransformInterceptor(),
+  );
 
   // const jwtAuthGuard = app.get(JwtAuthGuard);
   // app.useGlobalGuards(jwtAuthGuard);
