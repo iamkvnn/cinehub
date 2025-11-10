@@ -8,17 +8,14 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: cinehub
-      MYSQL_USER: root
-      MYSQL_PASSWORD: root
     ports:
       - "3306:3306"
     volumes:
-      - mysql_data:/var/lib/mysql
+      - mysql_cinehub_data:/var/lib/mysql
     networks:
       - mysql_network
 
 volumes:
-  mysql_data:
-
+  mysql_cinehub_data:
 networks:
   mysql_network:
