@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TerminusModule } from '@nestjs/terminus';
-import { HealthcheckController } from './controller/healthcheck.controller';
+import { HealthcheckController } from './healthcheck.controller';
 
 @Module({
   imports: [TerminusModule],

@@ -7,7 +7,7 @@ import {
 import { Observable } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
 import { Request } from 'express';
-import { ApiResponse, PaginatedApiResponse } from '../dto';
+import { ApiResponseDto, PaginatedApiResponseDto } from '../dto';
 
 @Injectable()
 export class ResponseTransformInterceptor<T> implements NestInterceptor<T, any>{
@@ -20,7 +20,7 @@ export class ResponseTransformInterceptor<T> implements NestInterceptor<T, any>{
     }
 
     return next.handle().pipe(
-      map((data) => (data instanceof ApiResponse || data instanceof PaginatedApiResponse ? {
+      map((data) => (data instanceof ApiResponseDto || data instanceof PaginatedApiResponseDto ? {
         success: true,
         ...data,
         path: request.url,
