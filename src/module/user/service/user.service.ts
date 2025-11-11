@@ -1,9 +1,13 @@
-import { BadRequestException, Injectable, NotFoundException, Res } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserEntity } from '../entity/user.entity';
 import { Repository } from 'typeorm';
 import { PaginatedApiQuery } from 'src/common/dto/paginated-query.dto';
-import { CreateUserDto, UpdateUserDto } from '../dto/user.dto';
+import { CreateUserDto } from '../dto/user.dto';
 import { hashPasswordSync } from 'src/common/utils';
 
 @Injectable()
@@ -14,14 +18,16 @@ export class UserService {
   ) {}
 
   async findAll(query: PaginatedApiQuery): Promise<[UserEntity[], number]> {
-    const qb = this.userRepository.createQueryBuilder('user');  
+    const qb = this.userRepository.createQueryBuilder('user');
 
     if (query.sort) {
       Object.entries(query.sort).forEach(([key, value]) => {
         if (value !== 'ASC' && value !== 'DESC') {
-          throw new BadRequestException(`thứ tự sắp xếp không hợp lệ cho ${key}: ${value}`);
+          throw new BadRequestException(
+            `thứ tự sắp xếp không hợp lệ cho ${key}: ${value}`,
+          );
         }
-        qb.addOrderBy(`user.${key}`, value as 'ASC' | 'DESC');
+        qb.addOrderBy(`user.${key}`, value);
       });
     }
 
@@ -45,7 +51,10 @@ export class UserService {
     return this.userRepository.save(user);
   }
 
-  async updateUser(id: string, updateDto: Partial<UserEntity>): Promise<UserEntity> {
+  async updateUser(
+    id: string,
+    updateDto: Partial<UserEntity>,
+  ): Promise<UserEntity> {
     const user = await this.findById(id);
     Object.assign(user, updateDto);
     return this.userRepository.save(user);

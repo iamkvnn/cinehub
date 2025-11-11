@@ -7,6 +7,7 @@ import { createApiResponse } from 'src/common/utils';
 import { UserDto } from 'src/module/user/dto/user.dto';
 import { plainToInstance } from 'class-transformer';
 import { ResetPasswordDto } from '../dto/reset-password.dto';
+import { LoginDto } from '../dto/login.dto';
 
 @ApiTags('Auth')
 @Controller({ path: 'auth', version: '1' })
@@ -22,7 +23,9 @@ export class AuthController {
   })
   async register(@Body() dto: RegisterDto) {
     return createApiResponse(
-        plainToInstance(UserDto, await this.authService.registerUser(dto), { excludeExtraneousValues: true }),
+      plainToInstance(UserDto, await this.authService.registerUser(dto), {
+        excludeExtraneousValues: true,
+      }),
     );
   }
 
@@ -38,10 +41,14 @@ export class AuthController {
 
   @Post('resend-otp')
   @ApiOperation({ summary: 'Gửi lại mã OTP' })
-  @ApiBody({ schema: { properties: { email: { type: 'string', example: 'user@example.com' } } } })
+  @ApiBody({
+    schema: {
+      properties: { email: { type: 'string', example: 'user@example.com' } },
+    },
+  })
   @ApiResponse({
-      status: 200,
-      description: 'Gửi lại mã OTP thành công',
+    status: 200,
+    description: 'Gửi lại mã OTP thành công',
   })
   async resendOtp(@Body('email') email: string) {
     await this.authService.resendOtp(email);
@@ -49,10 +56,15 @@ export class AuthController {
 
   @Post('forgot-password')
   @ApiOperation({ summary: 'Yêu cầu đặt lại mật khẩu' })
-  @ApiBody({ schema: { properties: { email: { type: 'string', example: 'user@example.com' } } } })
+  @ApiBody({
+    schema: {
+      properties: { email: { type: 'string', example: 'user@example.com' } },
+    },
+  })
   @ApiResponse({
-      status: 200,
-      description: 'Yêu cầu đặt lại mật khẩu thành công, mã OTP đã được gửi qua email',
+    status: 200,
+    description:
+      'Yêu cầu đặt lại mật khẩu thành công, mã OTP đã được gửi qua email',
   })
   async forgotPassword(@Body('email') email: string) {
     await this.authService.forgotPassword(email);
@@ -61,10 +73,20 @@ export class AuthController {
   @Post('reset-password')
   @ApiOperation({ summary: 'Đặt lại mật khẩu bằng mã OTP' })
   @ApiResponse({
-      status: 200,
-      description: 'Đặt lại mật khẩu thành công',
+    status: 200,
+    description: 'Đặt lại mật khẩu thành công',
   })
   async resetPassword(@Body() dto: ResetPasswordDto) {
     await this.authService.resetPassword(dto);
+  }
+
+  @Post('login')
+  @ApiOperation({ summary: 'Login' })
+  @ApiResponse({
+    status: 200,
+    description: 'Login successfully',
+  })
+  async login(@Body() dto: LoginDto) {
+    await this.authService.login(dto);
   }
 }
