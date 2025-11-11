@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { AuthService } from '../service/auth.service';
 import { RegisterDto } from '../dto/register.dto';
@@ -8,6 +8,8 @@ import { UserDto } from 'src/module/user/dto/user.dto';
 import { plainToInstance } from 'class-transformer';
 import { ResetPasswordDto } from '../dto/reset-password.dto';
 import { LoginDto } from '../dto/login.dto';
+import { LoginResponseDto } from '../dto/login.response.dto';
+import { JwtAuthGuard } from 'src/common/guard';
 
 @ApiTags('Auth')
 @Controller({ path: 'auth', version: '1' })
@@ -86,7 +88,17 @@ export class AuthController {
     status: 200,
     description: 'Login successfully',
   })
-  async login(@Body() dto: LoginDto) {
-    await this.authService.login(dto);
+  async login(@Body() dto: LoginDto): Promise<LoginResponseDto> {
+    return await this.authService.login(dto);
+  }
+  @UseGuards(JwtAuthGuard)
+  @Get('test-login')
+  @ApiOperation({ summary: 'Test login' })
+  @ApiResponse({
+    status: 200,
+    description: 'Login successfully',
+  })
+  testLogin(): string {
+    return 'Login ok';
   }
 }

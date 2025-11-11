@@ -20,4 +20,7 @@ export class UserEntity extends BaseEntity {
 
   @Column({ nullable: true })
   otpExpiresAt?: Date;
+
+  @Column({ nullable: true })
+  refreshToken?: string;
 }
