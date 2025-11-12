@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { UserService } from 'src/module/user/service/user.service';
 import { RegisterDto } from '../dto/register.dto';
 import {
@@ -15,6 +11,9 @@ import { ResetPasswordDto } from '../dto/reset-password.dto';
 import { LoginDto } from '../dto/login.dto';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { GoogleProfileDto } from '../dto/google.profile.dto';
+import { LoginResponseDto } from '../dto/login.response.dto';
+import { UserEntity } from 'src/module/user/entity/user.entity';
 
 @Injectable()
 export class AuthService {
@@ -188,4 +187,22 @@ export class AuthService {
   //     refreshToken: newRefresh,
   //   };
   // }
+  async validateGoogleUser(
+    profile: GoogleProfileDto,
+  ): Promise<LoginResponseDto> {
+    const user: UserEntity =
+      await this.userService.findOrCreateByGoogleProfile(profile);
+    // tạo JWT
+    const payload = { sub: user.id, email: user.email };
+    const accessToken = await this.jwtService.signAsync(payload, {
+      secret: this.accessSecret,
+      expiresIn: this.accessExpire,
+    });
+    const refreshToken = await this.jwtService.signAsync(payload, {
+      secret: this.refreshSecret,
+      expiresIn: this.refreshExpire,
+    });
+
+    return { accessToken, refreshToken };
+  }
 }

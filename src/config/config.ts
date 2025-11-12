@@ -18,4 +18,11 @@ export default () => ({
       expired: process.env.JWT_REFRESH_EXPRIED || '86400',
     },
   },
+  google: {
+    clientId: process.env.GOOGLE_CLIENT_ID || '',
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+    callbackURL:
+      process.env.GOOGLE_CALLBACK_URL ||
+      'http://localhost:3000/api/v1/auth/google/callback',
+  },
 });

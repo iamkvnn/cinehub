@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { AuthService } from '../service/auth.service';
 import { RegisterDto } from '../dto/register.dto';
@@ -10,6 +10,8 @@ import { ResetPasswordDto } from '../dto/reset-password.dto';
 import { LoginDto } from '../dto/login.dto';
 import { LoginResponseDto } from '../dto/login.response.dto';
 import { JwtAuthGuard } from 'src/common/guard';
+import { AuthGuard } from '@nestjs/passport';
+import express from 'express';
 
 @ApiTags('Auth')
 @Controller({ path: 'auth', version: '1' })
@@ -90,6 +92,15 @@ export class AuthController {
   })
   async login(@Body() dto: LoginDto): Promise<LoginResponseDto> {
     return await this.authService.login(dto);
+  }
+  @Get('google')
+  @UseGuards(AuthGuard('google'))
+  async googleLogin() {}
+
+  @Get('google/callback')
+  @UseGuards(AuthGuard('google'))
+  googleCallback(@Req() req: express.Request) {
+    return req.user;
   }
   @UseGuards(JwtAuthGuard)
   @Get('test-login')

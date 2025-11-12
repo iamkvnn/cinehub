@@ -9,6 +9,7 @@ import { Repository } from 'typeorm';
 import { PaginatedApiQuery } from 'src/common/dto/paginated-query.dto';
 import { CreateUserDto } from '../dto/user.dto';
 import { hashPasswordSync } from 'src/common/utils';
+import { GoogleProfileDto } from 'src/module/auth/dto/google.profile.dto';
 
 @Injectable()
 export class UserService {
@@ -67,7 +68,25 @@ export class UserService {
     }
     return user;
   }
+  async findOrCreateByGoogleProfile(
+    profile: GoogleProfileDto,
+  ): Promise<UserEntity> {
+    let user = await this.userRepository.findOne({
+      where: { email: profile.email },
+    });
 
+    if (!user) {
+      user = this.userRepository.create({
+        email: profile.email,
+        name: profile.displayName || `${profile.firstName} ${profile.lastName}`,
+        password: '',
+        isVerified: true,
+      });
+      await this.userRepository.save(user);
+    }
+
+    return user;
+  }
   async findById(id: string): Promise<UserEntity> {
     const user = await this.userRepository.findOne({ where: { id } });
     if (!user) {
