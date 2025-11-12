@@ -18,7 +18,12 @@ async function bootstrap() {
       prefix: 'CineHub',
     }),
   });
-  app.enableCors();
+  app.enableCors({
+    origin: '*',
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
+  });
   app.setGlobalPrefix('api');
   app.enableVersioning({
     type: VersioningType.URI,
@@ -42,7 +47,9 @@ async function bootstrap() {
     .setVersion('1.0')
     .build();
   const documentFactory = () => SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/v1/api-docs', app, documentFactory);
+  SwaggerModule.setup('api/v1/api-docs', app, documentFactory, {
+    jsonDocumentUrl: 'api/v1/api-docs-json',
+  });
 
   app.enableShutdownHooks();
   await app.listen(process.env.PORT ?? 3000);

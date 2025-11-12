@@ -103,9 +103,10 @@ export class AuthService {
       password: hashPasswordSync(dto.newPassword),
     });
   }
+
   async login(
     request: LoginDto,
-  ): Promise<{ accessToken: string; refreshToken: string }> {
+  ) {
     const user = await this.userService.findByEmail(request.email);
 
     if (!user) {
@@ -136,10 +137,10 @@ export class AuthService {
     await this.userService.updateUser(user.id, {
       refreshToken: refreshToken,
     });
-
     return {
       accessToken,
       refreshToken,
+      user: user,
     };
   }
   // async refreshToken(
@@ -189,7 +190,7 @@ export class AuthService {
   // }
   async validateGoogleUser(
     profile: GoogleProfileDto,
-  ): Promise<LoginResponseDto> {
+  ) {
     const user: UserEntity =
       await this.userService.findOrCreateByGoogleProfile(profile);
     // tạo JWT
@@ -203,6 +204,6 @@ export class AuthService {
       expiresIn: this.refreshExpire,
     });
 
-    return { accessToken, refreshToken };
+    return { accessToken, refreshToken, user };
   }
 }

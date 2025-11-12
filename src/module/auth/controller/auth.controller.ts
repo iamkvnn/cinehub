@@ -89,10 +89,16 @@ export class AuthController {
   @ApiResponse({
     status: 200,
     description: 'Login successfully',
+    type: createApiResponseDto(LoginResponseDto),
   })
-  async login(@Body() dto: LoginDto): Promise<LoginResponseDto> {
-    return await this.authService.login(dto);
+  async login(@Body() dto: LoginDto) {
+    return plainToInstance(
+      LoginResponseDto,
+      await this.authService.login(dto),
+      { excludeExtraneousValues: true },
+    );
   }
+
   @Get('google')
   @UseGuards(AuthGuard('google'))
   async googleLogin() {}
