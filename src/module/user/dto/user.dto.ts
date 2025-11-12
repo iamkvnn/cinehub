@@ -1,7 +1,8 @@
 import { ApiProperty, OmitType } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
-import { IsEmail, IsString, IsStrongPassword } from 'class-validator';
+import { IsEmail, IsEnum, IsString, IsStrongPassword } from 'class-validator';
 import { BaseDto } from 'src/core/base/base.dto';
+import { Gender } from '../const/user.const';
 
 export class UserDto extends BaseDto {
   @ApiProperty()
@@ -13,6 +14,13 @@ export class UserDto extends BaseDto {
   @IsEmail()
   @Expose()
   email: string;
+
+  @ApiProperty({
+    enum: Gender
+  })
+  @IsEnum(Gender)
+  @Expose()
+  gender: Gender;
 }
 
 export class CreateUserDto extends OmitType(UserDto, [

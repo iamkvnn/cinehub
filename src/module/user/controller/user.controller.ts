@@ -2,7 +2,7 @@ import { Body, Controller, Delete, Get, Param, Post, Put, Query } from '@nestjs/
 import { UserService } from '../service/user.service';
 import { createApiResponse, createPaginatedApiResponse } from 'src/common/utils';
 import { ApiBody, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
-import { CreateUserDto, UserDto } from '../dto/user.dto';
+import { CreateUserDto, UpdateUserDto, UserDto } from '../dto/user.dto';
 import { createApiResponseDto, createPaginatedApiResponseDto, PaginatedApiQuery } from 'src/common/dto';
 import { plainToInstance } from 'class-transformer';
 
@@ -65,7 +65,7 @@ export class UserController {
     description: 'Cập nhật thông tin người dùng',
     type: createApiResponseDto(UserDto),
   })
-  async updateUser(@Param('id') id: string, @Body() updateDto: CreateUserDto) {
+  async updateUser(@Param('id') id: string, @Body() updateDto: UpdateUserDto) {
     const user = await this.userService.updateUser(id, updateDto);
     return createApiResponse(
       plainToInstance(UserDto, user, { excludeExtraneousValues: true }),

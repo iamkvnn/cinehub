@@ -1,5 +1,6 @@
 import { BaseEntity } from 'src/core/base/base.entity';
 import { Entity, Column } from 'typeorm';
+import { Gender } from '../const/user.const';
 
 @Entity('users')
 export class UserEntity extends BaseEntity {
@@ -8,6 +9,9 @@ export class UserEntity extends BaseEntity {
 
   @Column()
   name: string;
+
+  @Column({ type: 'enum', enum: Gender })
+  gender: Gender;
 
   @Column()
   password: string;

@@ -6,7 +6,7 @@ export const validationPipeOptions: ValidationPipeOptions = {
     enableImplicitConversion: true,   // allow type conversion
   },
   whitelist: true,                    // strip unknown properties
-  forbidNonWhitelisted: true,         // throw if extra fields exist
+  forbidNonWhitelisted: false,         // throw if extra fields exist
   exceptionFactory: (errors) => {
     const formattedErrors = errors.map(err => ({
       property: err.property,
