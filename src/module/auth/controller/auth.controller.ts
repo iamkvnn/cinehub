@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Req,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { AuthService } from '../service/auth.service';
 import { RegisterDto } from '../dto/register.dto';
@@ -102,11 +110,13 @@ export class AuthController {
   @Get('google')
   @UseGuards(AuthGuard('google'))
   async googleLogin() {}
-
   @Get('google/callback')
   @UseGuards(AuthGuard('google'))
-  googleCallback(@Req() req: express.Request) {
-    return req.user;
+  googleCallback(@Req() req: Request, @Res() res: Response) {
+    const user: LoginResponseDto = req.user;
+    return res.redirect(
+      `${process.env.FRONTEND_URL}/auth/callback?token=${user.accessToken}&refreshToken=${user.refreshToken}`,
+    );
   }
   @UseGuards(JwtAuthGuard)
   @Get('test-login')
