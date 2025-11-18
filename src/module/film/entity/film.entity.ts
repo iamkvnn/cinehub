@@ -1,26 +1,21 @@
 import {
   Column,
-  CreateDateColumn,
   Entity,
-  ManyToOne,
-  PrimaryGeneratedColumn,
-  UpdateDateColumn,
+  JoinTable,
+  ManyToMany,
+  OneToMany,
 } from 'typeorm';
-import { Category } from './category.entity';
+import { Genre } from './genre.entity';
+import { BaseEntity } from 'src/core/base/base.entity';
+import { Poster } from 'src/module/poster/entity/poster.entity';
 
 @Entity()
-export class Film {
-  @PrimaryGeneratedColumn('uuid')
-  id: string;
-
+export class Film extends BaseEntity {
   @Column()
   title: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'text', nullable: true })
   description: string;
-
-  @Column({ nullable: true })
-  poster: string;
 
   @Column({ default: 0 })
   views: number;
@@ -31,12 +26,12 @@ export class Film {
   @Column({ type: 'timestamp', nullable: true })
   releaseDate: Date | null;
 
-  @ManyToOne(() => Category, (category) => category.films, { eager: true })
-  category: Category;
+  @ManyToMany(() => Genre, (genre) => genre.films, {
+    cascade: true,
+  })
+  @JoinTable()
+  genres: Genre[];
 
-  @CreateDateColumn()
-  createdAt: Date;
-
-  @UpdateDateColumn()
-  updatedAt: Date;
+  @OneToMany(() => Poster, (poster) => poster.film, { eager: true, cascade: true, orphanedRowAction: 'delete' })
+  posters: Poster[];
 }

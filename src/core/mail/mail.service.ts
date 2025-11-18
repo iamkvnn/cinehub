@@ -12,7 +12,6 @@ export class MailService {
   });
 
   async sendOtpEmail(to: string, otp: string) {
-    console.log(this.transporter);
     const mailOptions = {
       from: `"CineHub" <${process.env.MAIL_USER}>`,
       to,

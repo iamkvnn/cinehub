@@ -25,4 +25,13 @@ export default () => ({
       process.env.GOOGLE_CALLBACK_URL ||
       'http://localhost:3000/api/v1/auth/google/callback',
   },
+  s3: {
+    accessKey: process.env.S3_ACCESS_KEY || '',
+    secretKey: process.env.S3_SECRET_KEY || '',
+    bucketName: process.env.S3_BUCKET_NAME || '',
+    region: process.env.S3_REGION || '',
+  },
+  cloudfront: {
+    domain: process.env.CLOUDFRONT_DOMAIN || '',
+  },
 });

@@ -19,7 +19,7 @@ import { LoginDto } from '../dto/login.dto';
 import { LoginResponseDto } from '../dto/login.response.dto';
 import { JwtAuthGuard } from 'src/common/guard';
 import { AuthGuard } from '@nestjs/passport';
-import express from 'express';
+import type { Request, Response } from 'express';
 
 @ApiTags('Auth')
 @Controller({ path: 'auth', version: '1' })
@@ -113,7 +113,7 @@ export class AuthController {
   @Get('google/callback')
   @UseGuards(AuthGuard('google'))
   googleCallback(@Req() req: Request, @Res() res: Response) {
-    const user: LoginResponseDto = req.user;
+    const user: LoginResponseDto = req.user as LoginResponseDto;
     return res.redirect(
       `${process.env.FRONTEND_URL}/auth/callback?token=${user.accessToken}&refreshToken=${user.refreshToken}`,
     );

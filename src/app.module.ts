@@ -6,6 +6,9 @@ import config from './config/config';
 import { DatabaseModule } from './core/database/database.module';
 import { HealthcheckModule } from './core/health/healthcheck.module';
 import { FilmModule } from './module/film/film.module';
+import { PosterModule } from './module/poster/poster.module';
+import { AwsModule } from './module/aws/aws.module';
+import { MediaModule } from './module/media/media.module';
 
 @Module({
   imports: [
@@ -18,6 +21,9 @@ import { FilmModule } from './module/film/film.module';
     FilmModule,
     AuthModule,
     UserModule,
+    PosterModule,
+    AwsModule,
+    MediaModule,
   ],
 })
 export class AppModule {}
