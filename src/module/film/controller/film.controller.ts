@@ -8,20 +8,22 @@ import {
   Put,
   Delete,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiParam,
-} from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { FilmService } from '../service/film.service';
 import { CreateFilmDto } from '../dto/request/create-film.dto';
 import { UpdateFilmDto } from '../dto/request/update-film.dto';
 import { PaginatedApiQuery } from 'src/common/dto/paginated-query.dto';
 import { FilmResponseDto } from '../dto/response/film.dto';
-import { createApiResponse, createPaginatedApiResponse } from 'src/common/utils';
+import {
+  createApiResponse,
+  createPaginatedApiResponse,
+} from 'src/common/utils';
 import { plainToInstance } from 'class-transformer';
-import { createApiResponseDto, createPaginatedApiResponseDto } from 'src/common/dto';
+import {
+  createApiResponseDto,
+  createPaginatedApiResponseDto,
+} from 'src/common/dto';
+import { PaginatedFilmByReleaseQuery } from '../dto/request/paginated-film-query.dto';
 
 @ApiTags('Film')
 @Controller('films')
@@ -68,6 +70,27 @@ export class FilmController {
     );
   }
 
+  // -----------------------
+  // Query by released day
+  // -----------------------
+  @Get('by-release')
+  @ApiOperation({ summary: 'Lấy danh sách film theo ngày phát hành mới nhất' })
+  @ApiResponse({
+    status: 200,
+    description: 'Danh sách phim theo ngày phát hành',
+    type: createPaginatedApiResponseDto(FilmResponseDto),
+  })
+  async getByReleaseDate(@Query() query: PaginatedFilmByReleaseQuery) {
+    const [films, count] = await this.service.findByReleaseDate(query);
+    return createPaginatedApiResponse(
+      plainToInstance(FilmResponseDto, films, {
+        excludeExtraneousValues: true,
+      }),
+      count,
+      query.page,
+      query.limit,
+    );
+  }
   // -----------------------
   // Get film detail
   // -----------------------
