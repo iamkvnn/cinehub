@@ -11,7 +11,7 @@ export class ImageService {
         private readonly awsS3Service: AwsS3Service,
         private readonly configService: ConfigService,
     ) {
-        this.cloudFrontDomain = this.configService.get<string>('cloudfront.domain', '');
+        this.cloudFrontDomain = this.configService.get<string>('aws.cloudfront.domain', '');
     }
 
     async uploadImage(file: Express.Multer.File): Promise<ImageDto> {

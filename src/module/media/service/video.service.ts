@@ -29,7 +29,7 @@ export class VideoService {
     private readonly videoRepo: Repository<Video>,
   ) {
     this.outputDir = path.join(process.cwd(), this.configService.get<string>("videos.outputDir", "/tmp/videos"));
-    this.cloudFrontDomain = this.configService.get<string>('cloudfront.domain', '');
+    this.cloudFrontDomain = this.configService.get<string>('aws.cloudfront.domain', '');
   }
 
   async saveVideo(
