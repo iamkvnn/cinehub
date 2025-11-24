@@ -1,11 +1,10 @@
-import { ApiProperty } from "@nestjs/swagger";
-import { Expose, Type } from "class-transformer";
-import { IsArray } from "class-validator";
-import { PosterDto } from "src/module/poster/dto/poster.dto";
-import { GenreDto } from "./genre.dto";
+import { ApiProperty } from '@nestjs/swagger';
+import { Expose, Type } from 'class-transformer';
+import { IsArray } from 'class-validator';
+import { PosterDto } from 'src/module/poster/dto/poster.dto';
+import { GenreDto } from './genre.dto';
 
 export class FilmResponseDto {
-
   @ApiProperty({
     description: 'The unique identifier of the film',
     example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
