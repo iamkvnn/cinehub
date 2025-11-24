@@ -7,12 +7,16 @@ import {
   Query,
   Put,
   Delete,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
   ApiResponse,
   ApiParam,
+  ApiConsumes,
+  ApiBody,
 } from '@nestjs/swagger';
 import { FilmService } from '../service/film.service';
 import { CreateFilmDto } from '../dto/request/create-film.dto';
@@ -22,6 +26,7 @@ import { FilmResponseDto } from '../dto/response/film.dto';
 import { createApiResponse, createPaginatedApiResponse } from 'src/common/utils';
 import { plainToInstance } from 'class-transformer';
 import { createApiResponseDto, createPaginatedApiResponseDto } from 'src/common/dto';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('Film')
 @Controller('films')
@@ -130,5 +135,42 @@ export class FilmController {
   @ApiResponse({ status: 404, description: 'Film không tồn tại' })
   async remove(@Param('id') id: string) {
     await this.service.remove(id);
+  }
+
+  @Post(':id/video')
+  @ApiOperation({ summary: 'Upload video cho film' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+      required: ['file'],
+    },
+  })
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiResponse({
+    status: 200,
+    description: 'Video được upload thành công',
+  })
+  uploadVideo(
+    @Param('id') filmId: string,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    this.service.uploadVideo(filmId, file);
+  }
+
+  @Delete(':id/video')
+  @ApiOperation({ summary: 'Xoá video của film' })
+  @ApiResponse({
+    status: 200,
+    description: 'Video được xoá thành công',
+  })
+  deleteVideo(@Param('id') filmId: string) {
+    this.service.deleteVideo(filmId);
   }
 }

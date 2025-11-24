@@ -10,6 +10,7 @@ import { CreateFilmDto } from '../dto/request/create-film.dto';
 import { UpdateFilmDto } from '../dto/request/update-film.dto';
 import { PaginatedApiQuery } from 'src/common/dto';
 import { Genre } from '../entity/genre.entity';
+import { VideoService } from 'src/module/media/service/video.service';
 @Injectable()
 export class FilmService {
   constructor(
@@ -18,6 +19,8 @@ export class FilmService {
 
     @InjectRepository(Genre)
     private genreRepo: Repository<Genre>,
+
+    private readonly videoService: VideoService,
   ) {}
 
   async create(dto: CreateFilmDto) {
@@ -82,5 +85,13 @@ export class FilmService {
 
   async remove(id: string) {
     await this.filmRepo.delete(id);
+  }
+
+  uploadVideo(filmId: string, file: Express.Multer.File) {
+    this.videoService.saveVideo(filmId, file);
+  }
+
+  deleteVideo(filmId: string) {
+    this.videoService.deleteVideo(`videos/${filmId}`);
   }
 }

@@ -25,13 +25,21 @@ export default () => ({
       process.env.GOOGLE_CALLBACK_URL ||
       'http://localhost:3000/api/v1/auth/google/callback',
   },
-  s3: {
+  aws: {
     accessKey: process.env.S3_ACCESS_KEY || '',
     secretKey: process.env.S3_SECRET_KEY || '',
-    bucketName: process.env.S3_BUCKET_NAME || '',
-    region: process.env.S3_REGION || '',
+    s3: {
+      bucketName: process.env.S3_BUCKET_NAME || '',
+      region: process.env.S3_REGION || '',
+    },
+    cloudfront: {
+      distributionId: process.env.CLOUDFRONT_DISTRIBUTION_ID || '',
+      domain: process.env.CLOUDFRONT_DOMAIN || '',
+      keyPairId: process.env.CLOUDFRONT_KEY_PAIR_ID || '',
+      privateKeyPath: process.env.CLOUDFRONT_PRIVATE_KEY_PATH || '',
+    },
   },
-  cloudfront: {
-    domain: process.env.CLOUDFRONT_DOMAIN || '',
+  videos: {
+    outputDir: process.env.TRANSFORMS_OUTPUT_DIR || '/tmp/videos',
   },
 });

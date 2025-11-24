@@ -1,11 +1,14 @@
-// src/modules/upload/upload.service.ts
-import { Injectable, BadRequestException } from '@nestjs/common';
-// import * as ffmpeg from 'ffmpeg';
+import { Injectable, BadRequestException, Logger } from '@nestjs/common';
 import * as fs from 'fs';
 import * as path from 'path';
 import { promisify } from 'util';
-import * as crypto from 'crypto';
-import { AwsS3Service } from 'src/module/aws/s3/s3.service';
+import { AwsS3Service } from 'src/module/aws/service/s3.service';
+import { ConfigService } from '@nestjs/config';
+import { TransformService } from './transform.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Video } from 'src/module/film/entity/video.entity';
+import { VideoStatus } from 'src/module/film/const/const';
 
 const writeFile = promisify(fs.writeFile);
 const unlink = promisify(fs.unlink);
@@ -14,162 +17,102 @@ const mkdir = promisify(fs.mkdir);
 @Injectable()
 export class VideoService {
   private uploadCache = new Map();
+  private readonly outputDir: string;
+  private readonly cloudFrontDomain: string;
+  private readonly logger = new Logger(VideoService.name);
 
   constructor(
     private readonly awsS3Service: AwsS3Service,
-    //@InjectQueue('transcode') private transcodeQueue: Queue,
-  ) {}
-
-//   async validateVideoFile(file: Express.Multer.File): Promise<boolean> {
-//     const tempPath = `/tmp/${uuidv4()}.tmp`;
-    
-//     try {
-//       await writeFile(tempPath, file.buffer);
-
-//       return new Promise((resolve) => {
-//         ffmpeg.ffprobe(tempPath, (err, metadata) => {
-//           if (err) {
-//             resolve(false);
-//             return;
-//           }
-
-//           // Kiểm tra có video stream không
-//           const hasVideo = metadata.streams.some(
-//             (stream) => stream.codec_type === 'video',
-//           );
-
-//           // Kiểm tra codec hợp lệ
-//           const validCodecs = ['h264', 'hevc', 'vp9', 'av1'];
-//           const videoStream = metadata.streams.find(s => s.codec_type === 'video');
-//           const hasValidCodec = videoStream && validCodecs.includes(videoStream.codec_name);
-
-//           // Kiểm tra duration hợp lệ (ít nhất 1 giây)
-//           const hasValidDuration = metadata.format.duration > 1;
-
-//           resolve(hasVideo && hasValidCodec && hasValidDuration);
-//         });
-//       });
-//     } finally {
-//       // Cleanup
-//       try {
-//         await unlink(tempPath);
-//       } catch {}
-//     }
-//   }
-
-  async processUpload(
-    file: Express.Multer.File,
+    private readonly configService: ConfigService,
+    private readonly transformService: TransformService,
+    @InjectRepository(Video)
+    private readonly videoRepo: Repository<Video>,
   ) {
-    
-    const videoId = crypto.randomUUID();
-    const fileExtension = path.extname(file.originalname);
-    const originalKey = `videos/${videoId}/original${fileExtension}`;
-
-    await this.awsS3Service.uploadFile(file, originalKey);
-
-    // const videoMetadata = await this.extractVideoMetadata(file.buffer);
-
-    // const video = await this.saveVideoToDatabase({
-    //   id: videoId,
-    //   title: metadata.title,
-    //   description: metadata.description,
-    //   originalKey,
-    //   originalFilename: file.originalname,
-    //   fileSize: file.size,
-    //   duration: videoMetadata.duration,
-    //   width: videoMetadata.width,
-    //   height: videoMetadata.height,
-    //   status: 'uploaded',
-    // });
-
-    // await this.transcodeQueue.add('transcode-video', {
-    //   videoId,
-    //   originalKey,
-    //   resolutions: this.determineResolutions(videoMetadata.height),
-    // });
-
-    return {
-      videoId,
-      status: 'processing',
-      message: 'Video uploaded successfully and is being processed',
-    };
+    this.outputDir = path.join(process.cwd(), this.configService.get<string>("videos.outputDir", "/tmp/videos"));
+    this.cloudFrontDomain = this.configService.get<string>('cloudfront.domain', '');
   }
 
-//   private async extractVideoMetadata(buffer: Buffer): Promise<any> {
-//     const tempPath = `/tmp/${crypto.randomUUID()}.tmp`;
-//     await writeFile(tempPath, buffer);
+  async saveVideo(
+    filmId: string,
+    file: Express.Multer.File,
+  ): Promise<Video> {
+    const video = await this.videoRepo.save({
+      filmId,
+      key: `videos/${filmId}`,
+      url: `${this.cloudFrontDomain}/videos/${filmId}/master.m3u8`,
+      status: VideoStatus.PROCESSING,
+    });
+    this.handleVideoProcessing(filmId, file);
+    return video;
+  }
 
-//     return new Promise((resolve, reject) => {
-//       ffmpeg.ffprobe(tempPath, async (err, metadata) => {
-//         await unlink(tempPath);
+  async handleVideoProcessing(filmId: string, file: Express.Multer.File) {
+    try {
+      const videoDir = path.join(this.outputDir, filmId);
+      if (fs.existsSync(videoDir)) {
+        fs.rmSync(videoDir, { recursive: true, force: true });
+        await this.deleteVideo(`videos/${filmId}`);
+      }
+      await mkdir(videoDir, { recursive: true });
+      const filePath = path.join(videoDir, `tmp.mp4`);
+      await writeFile(filePath, file.buffer);
 
-//         if (err) {
-//           reject(err);
-//           return;
-//         }
+      const hlsOutputDir = path.join(videoDir, 'hls');
+      const transformSuccess = await this.transformService.convertToHLS(filePath, hlsOutputDir);
 
-//         const videoStream = metadata.streams.find(
-//           (s) => s.codec_type === 'video',
-//         );
+      if (!transformSuccess) {
+        throw new Error("Video transformation failed.");
+      }
 
-//         resolve({
-//           duration: metadata.format.duration,
-//           width: videoStream?.width,
-//           height: videoStream?.height,
-//           codec: videoStream?.codec_name,
-//           bitrate: metadata.format.bit_rate,
-//         });
-//       });
-//     });
-//   }
+      await this.awsS3Service.uploadHLSToS3(
+        hlsOutputDir,
+        `videos/${filmId}`,
+      );
 
-  private determineResolutions(originalHeight: number): string[] {
-    const resolutions: string[] = [];
-    
-    if (originalHeight >= 1080) {
-      resolutions.push('1080p', '720p', '480p', '360p');
-    } else if (originalHeight >= 720) {
-      resolutions.push('720p', '480p', '360p');
-    } else if (originalHeight >= 480) {
-      resolutions.push('480p', '360p');
-    } else {
-      resolutions.push('360p');
+      const videoResolution = this.transformService.getVideoResolution(filePath);
+
+      await this.videoRepo.update({ filmId }, {
+        status: VideoStatus.READY,
+        maxResolution: videoResolution.width,
+      });
+      fs.rmSync(videoDir, { recursive: true, force: true });
+    } catch (err) {
+      await this.deleteVideo(`videos/${filmId}`);
+      this.logger.error(`Failed to save video for filmId ${filmId}: ${err?.message || err}`);
     }
-
-    return resolutions;
   }
 
   async handleChunkUpload(data: {
-    uploadId: string;
+    filmId: string;
     chunkIndex: number;
     totalChunks: number;
     chunk: string;
   }) {
-    const { uploadId, chunkIndex, totalChunks, chunk } = data;
-    if (!this.uploadCache.has(uploadId)) {
-      this.uploadCache.set(uploadId, {
+    const { filmId, chunkIndex, totalChunks, chunk } = data;
+    if (!this.uploadCache.has(filmId)) {
+      this.uploadCache.set(filmId, {
         chunks: new Array(totalChunks),
         receivedChunks: 0,
         createdAt: Date.now(),
       });
     }
 
-    const session = this.uploadCache.get(uploadId);
+    const session = this.uploadCache.get(filmId);
 
     session.chunks[chunkIndex] = Buffer.from(chunk, 'base64');
     session.receivedChunks++;
     this.cleanupOldSessions();
 
     return {
-      uploadId,
+      filmId,
       receivedChunks: session.receivedChunks,
       totalChunks,
       complete: session.receivedChunks === totalChunks,
     };
   }
 
-  async completeChunkedUpload(uploadId: string) {
-    const session = this.uploadCache.get(uploadId);
+  async completeChunkedUpload(filmId: string) {
+    const session = this.uploadCache.get(filmId);
 
     if (!session) {
       throw new BadRequestException('Upload session not found');
@@ -180,19 +123,8 @@ export class VideoService {
     }
 
     const completeFile = Buffer.concat(session.chunks.filter(Boolean));
-
-    // const isValid = await this.validateVideoFile({
-    //   buffer: completeFile,
-    //   mimetype: 'video/mp4',
-    //   originalname: 'uploaded.mp4',
-    // } as any);
-
-    // if (!isValid) {
-    //   this.uploadCache.delete(uploadId);
-    //   throw new BadRequestException('Invalid video file');
-    // }
-
-    const result = await this.processUpload(
+    const result = await this.saveVideo(
+      filmId,
       {
         buffer: completeFile,
         mimetype: 'video/mp4',
@@ -200,9 +132,7 @@ export class VideoService {
         size: completeFile.length,
       } as any,
     );
-
-    // Cleanup
-    this.uploadCache.delete(uploadId);
+    this.uploadCache.delete(filmId);
 
     return result;
   }
@@ -210,18 +140,19 @@ export class VideoService {
   private cleanupOldSessions() {
     const oneHourAgo = Date.now() - 3600000;
     
-    for (const [uploadId, session] of this.uploadCache.entries()) {
+    for (const [filmId, session] of this.uploadCache.entries()) {
       if (session.createdAt < oneHourAgo) {
-        this.uploadCache.delete(uploadId);
+        this.uploadCache.delete(filmId);
       }
     }
   }
 
-  async cancelChunkedUpload(uploadId: string) {
-    this.uploadCache.delete(uploadId);
+  async cancelChunkedUpload(filmId: string) {
+    this.uploadCache.delete(filmId);
   }
 
   async deleteVideo(videoKey: string) {
-    await this.awsS3Service.deleteFile(videoKey);
+    this.awsS3Service.deleteHLSFromS3(videoKey);
+    await this.videoRepo.delete({ key: videoKey });
   }
 }
