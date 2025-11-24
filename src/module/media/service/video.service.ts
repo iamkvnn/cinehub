@@ -36,6 +36,9 @@ export class VideoService {
     filmId: string,
     file: Express.Multer.File,
   ): Promise<Video> {
+    if (await this.videoRepo.findOne({ where: { filmId } })) {
+      throw new BadRequestException('Video for this film already exists');
+    }
     const video = await this.videoRepo.save({
       filmId,
       key: `videos/${filmId}`,
@@ -51,7 +54,6 @@ export class VideoService {
       const videoDir = path.join(this.outputDir, filmId);
       if (fs.existsSync(videoDir)) {
         fs.rmSync(videoDir, { recursive: true, force: true });
-        await this.deleteVideo(`videos/${filmId}`);
       }
       await mkdir(videoDir, { recursive: true });
       const filePath = path.join(videoDir, `tmp.mp4`);
@@ -152,6 +154,9 @@ export class VideoService {
   }
 
   async deleteVideo(videoKey: string) {
+    if (!await this.videoRepo.findOne({ where: { key: videoKey } })) {
+      throw new BadRequestException('Video not found');
+    }
     this.awsS3Service.deleteHLSFromS3(videoKey);
     await this.videoRepo.delete({ key: videoKey });
   }

@@ -117,11 +117,11 @@ export class FilmService {
     await this.filmRepo.delete(id);
   }
 
-  uploadVideo(filmId: string, file: Express.Multer.File) {
-    this.videoService.saveVideo(filmId, file);
+  async uploadVideo(filmId: string, file: Express.Multer.File) {
+    await this.videoService.saveVideo(filmId, file);
   }
 
-  deleteVideo(filmId: string) {
-    this.videoService.deleteVideo(`videos/${filmId}`);
+  async deleteVideo(filmId: string) {
+    await this.videoService.deleteVideo(`videos/${filmId}`);
   }
 }

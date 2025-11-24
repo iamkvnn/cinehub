@@ -185,11 +185,11 @@ export class FilmController {
     status: 200,
     description: 'Video được upload thành công',
   })
-  uploadVideo(
+  async uploadVideo(
     @Param('id') filmId: string,
     @UploadedFile() file: Express.Multer.File,
   ) {
-    this.service.uploadVideo(filmId, file);
+    await this.service.uploadVideo(filmId, file);
   }
 
   @Delete(':id/video')
@@ -198,7 +198,7 @@ export class FilmController {
     status: 200,
     description: 'Video được xoá thành công',
   })
-  deleteVideo(@Param('id') filmId: string) {
-    this.service.deleteVideo(filmId);
+  async deleteVideo(@Param('id') filmId: string) {
+    await this.service.deleteVideo(filmId);
   }
 }
