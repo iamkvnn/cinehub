@@ -9,6 +9,8 @@ import { FilmModule } from './module/film/film.module';
 import { PosterModule } from './module/poster/poster.module';
 import { AwsModule } from './module/aws/aws.module';
 import { MediaModule } from './module/media/media.module';
+import { WhistlesModule } from './module/whistles/whistles.module';
+import { WatchHistoryModule } from './module/watch-history/watch-history.module';
 
 @Module({
   imports: [
@@ -24,6 +26,8 @@ import { MediaModule } from './module/media/media.module';
     PosterModule,
     AwsModule,
     MediaModule,
+    WhistlesModule,
+    WatchHistoryModule,
   ],
 })
 export class AppModule {}
