@@ -11,11 +11,9 @@ import { Film } from 'src/module/film/entity/film.entity';
 @Entity('watch_history')
 export class WatchHistoryEntity extends BaseEntity {
   @ManyToOne(() => UserEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'user_id' })
   user: UserEntity;
 
   @ManyToOne(() => Film, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'film_id' })
   film: Film;
 
   @Column({ type: 'int', default: 0 })

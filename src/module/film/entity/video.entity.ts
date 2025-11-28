@@ -1,7 +1,8 @@
 import { BaseEntity } from 'src/core/base/base.entity';
-import { Column, Entity, OneToOne, JoinColumn } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToOne } from 'typeorm';
 import { VideoStatus } from '../const/const';
 import { Film } from './film.entity';
+import { Episode } from './episode';
 
 @Entity()
 export class Video extends BaseEntity {
@@ -23,7 +24,10 @@ export class Video extends BaseEntity {
   @Column()
   filmId: string;
 
-  @OneToOne(() => Film, (film) => film.video, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'film_id' })
+  @ManyToOne(() => Film, (film) => film.videos, { onDelete: 'CASCADE' })
   film: Film;
+
+  @OneToOne(() => Episode, (episode) => episode.video, { onDelete: 'CASCADE', nullable: true })
+  @JoinColumn({ name: 'episodeId' })
+  episode: Episode;
 }

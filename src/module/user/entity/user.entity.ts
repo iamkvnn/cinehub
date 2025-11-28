@@ -1,6 +1,6 @@
 import { BaseEntity } from 'src/core/base/base.entity';
 import { Entity, Column, OneToMany } from 'typeorm';
-import { Gender } from '../const/user.const';
+import { Gender, UserPlan, UserRole } from '../const/user.const';
 import { WhistlesEntity } from 'src/module/whistles/entity/whistles.entity';
 import { WatchHistoryEntity } from 'src/module/watch-history/entity/watch-history.entity';
 
@@ -14,6 +14,12 @@ export class UserEntity extends BaseEntity {
 
   @Column({ type: 'enum', enum: Gender })
   gender: Gender;
+
+  @Column({ type: 'enum', enum: UserRole, default: UserRole.USER })
+  role: UserRole;
+
+  @Column({ type: 'enum', enum: UserPlan, default: UserPlan.FREE })
+  plan: UserPlan;
 
   @Column()
   password: string;

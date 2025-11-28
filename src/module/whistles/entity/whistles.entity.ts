@@ -11,10 +11,8 @@ import { Film } from 'src/module/film/entity/film.entity';
 @Entity('whistles')
 export class WhistlesEntity extends BaseEntity {
   @ManyToOne(() => UserEntity, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'user_id' })
   user: UserEntity;
 
   @ManyToOne(() => Film, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'film_id' })
   film: Film;
 }
