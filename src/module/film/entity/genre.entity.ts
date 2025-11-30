@@ -4,7 +4,7 @@ import { BaseEntity } from 'src/core/base/base.entity';
 
 @Entity()
 export class Genre extends BaseEntity {
-  @Column()
+  @Column({ unique: true })
   name: string;
 
   @ManyToMany(() => Film, (film) => film.genres)

@@ -18,17 +18,17 @@ import { Season } from './season';
 
 @Entity()
 export class Film extends BaseEntity {
-  @Column()
+  @Column({ unique: true })
   title: string;
 
-  @Column()
+  @Column({ unique: true })
   originalTitle: string;
 
-  @Column()
+  @Column({ unique: true })
   englishTitle: string;
 
   @Column({ type: 'text', nullable: true })
-  description: string;
+  description?: string;
 
   @Column({ default: 0 })
   views: number;
@@ -42,25 +42,11 @@ export class Film extends BaseEntity {
   @Column()
   country: string;
 
-  @Column()
+  @Column({ type: 'float', default: 0 })
   imdbRating: number;
 
-  @ManyToMany(() => Director, (director) => director.films, {
-    eager: true,
-    cascade: true,
-  })
-  @JoinTable()
-  directors: Director[];
-
-  @ManyToMany(() => Actor, (actor) => actor.films, {
-    eager: true,
-    cascade: true,
-  })
-  @JoinTable()
-  actors: Actor[];
-
-  @Column({ type: 'timestamp', nullable: true })
-  releaseDate: Date | null;
+  @Column({ type: 'timestamp' })
+  releaseDate: Date;
 
   @Column({ type: 'enum', enum: FilmStatus, default: FilmStatus.UPCOMING })
   status: FilmStatus;
@@ -69,14 +55,24 @@ export class Film extends BaseEntity {
   type: FilmType;
 
   @ManyToMany(() => Genre, (genre) => genre.films, {
-    eager: true,
     cascade: true,
   })
   @JoinTable()
   genres: Genre[];
 
+  @ManyToMany(() => Director, (director) => director.films, {
+    cascade: true,
+  })
+  @JoinTable()
+  directors: Director[];
+
+  @ManyToMany(() => Actor, (actor) => actor.films, {
+    cascade: true,
+  })
+  @JoinTable()
+  actors: Actor[];
+
   @OneToMany(() => Poster, (poster) => poster.film, {
-    eager: true,
     cascade: true,
     orphanedRowAction: 'delete',
   })

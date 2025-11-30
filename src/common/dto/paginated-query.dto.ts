@@ -27,4 +27,12 @@ export class PaginatedApiQuery {
   })
   @IsOptional()
   sort?: Record<string, string>;
+
+  @ApiProperty({
+    description: 'query string for search',
+    type: 'string',
+    required: false,
+  })
+  @IsOptional()
+  search?: string;
 }

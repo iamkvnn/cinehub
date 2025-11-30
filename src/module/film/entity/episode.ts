@@ -9,11 +9,11 @@ export class Episode extends BaseEntity {
     number: number;
 
     @Column({ type: 'timestamp', nullable: true })
-    releaseDate: Date;
+    releaseDate?: Date;
 
     @ManyToOne(() => Season, season => season.episodes, { onDelete: 'CASCADE' })
     season: Season;
 
-    @OneToOne(() => Video, { eager: true, cascade: true, orphanedRowAction: 'delete' })
+    @OneToOne(() => Video, { cascade: true, orphanedRowAction: 'delete' })
     video: Video;
 }
