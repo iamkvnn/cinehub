@@ -42,4 +42,11 @@ export default () => ({
   videos: {
     outputDir: process.env.TRANSFORMS_OUTPUT_DIR || '/tmp/videos',
   },
+  stripe: {
+    secretKey: process.env.STRIPE_SECRET_KEY || '',
+    webhookSecret: process.env.STRIPE_WEBHOOK_SECRET || '',
+  },
+  frontend: {
+    url: process.env.FRONTEND_URL || 'http://localhost:5173',
+  },
 });

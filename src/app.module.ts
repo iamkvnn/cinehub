@@ -11,6 +11,11 @@ import { AwsModule } from './module/aws/aws.module';
 import { MediaModule } from './module/media/media.module';
 import { WhistlesModule } from './module/whistles/whistles.module';
 import { WatchHistoryModule } from './module/watch-history/watch-history.module';
+import { PlanModule } from './module/plan/plan.module';
+import { SubscriptionModule } from './module/subscription/subscription.module';
+import { StripeModule } from './module/stripe/stripe.module';
+import { PaymentModule } from './module/payment/payment.module';
+import { WebhookModule } from './module/webhook/webhook.module';
 
 @Module({
   imports: [
@@ -28,6 +33,11 @@ import { WatchHistoryModule } from './module/watch-history/watch-history.module'
     MediaModule,
     WhistlesModule,
     WatchHistoryModule,
+    PlanModule,
+    SubscriptionModule,
+    StripeModule,
+    PaymentModule,
+    WebhookModule,
   ],
 })
 export class AppModule {}

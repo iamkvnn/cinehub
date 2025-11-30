@@ -17,6 +17,7 @@ async function bootstrap() {
       json: false,
       prefix: 'CineHub',
     }),
+    rawBody: true, // Enable raw body for webhook signature verification
   });
   app.enableCors({
     origin: '*',

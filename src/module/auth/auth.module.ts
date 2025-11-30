@@ -8,12 +8,14 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './service/jwt.strategy';
 import { GoogleStrategy } from './service/google.strategy';
+import { StripeModule } from '../stripe/stripe.module';
 
 @Module({
   imports: [
     ConfigModule,
     UserModule,
     MailModule,
+    StripeModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],

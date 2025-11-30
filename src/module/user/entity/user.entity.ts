@@ -1,8 +1,9 @@
 import { BaseEntity } from 'src/core/base/base.entity';
 import { Entity, Column, OneToMany } from 'typeorm';
-import { Gender, UserPlan, UserRole } from '../const/user.const';
+import { Gender, UserRole } from '../const/user.const';
 import { WhistlesEntity } from 'src/module/whistles/entity/whistles.entity';
 import { WatchHistoryEntity } from 'src/module/watch-history/entity/watch-history.entity';
+import { SubscriptionEntity } from 'src/module/subscription/entity/subscription.entity';
 
 @Entity('users')
 export class UserEntity extends BaseEntity {
@@ -18,14 +19,14 @@ export class UserEntity extends BaseEntity {
   @Column({ type: 'enum', enum: UserRole, default: UserRole.USER })
   role: UserRole;
 
-  @Column({ type: 'enum', enum: UserPlan, default: UserPlan.FREE })
-  plan: UserPlan;
-
   @Column()
   password: string;
 
   @Column({ default: false })
   isVerified: boolean;
+
+  @Column({ nullable: true })
+  stripeCustomerId: string;
 
   @Column({ nullable: true })
   otp?: string;
@@ -41,4 +42,7 @@ export class UserEntity extends BaseEntity {
 
   @OneToMany(() => WatchHistoryEntity, (history) => history.user)
   watchHistory: WatchHistoryEntity[];
+
+  @OneToMany(() => SubscriptionEntity, (subscription) => subscription.user)
+  subscriptions: SubscriptionEntity[];
 }

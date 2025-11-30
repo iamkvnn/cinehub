@@ -12,8 +12,8 @@ import { LoginDto } from '../dto/login.dto';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { GoogleProfileDto } from '../dto/google.profile.dto';
-import { LoginResponseDto } from '../dto/login.response.dto';
 import { UserEntity } from 'src/module/user/entity/user.entity';
+import { StripeService } from 'src/module/stripe/stripe.service';
 
 @Injectable()
 export class AuthService {
@@ -27,6 +27,7 @@ export class AuthService {
     private readonly mailService: MailService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly stripeService: StripeService,
   ) {
     const jwtConfig = this.configService.get<{
       access: { secret: string; expired: number };
@@ -45,12 +46,20 @@ export class AuthService {
 
   async registerUser(registerUser: RegisterDto) {
     const otp = generateOtp();
-    this.mailService.sendOtpEmail(registerUser.email, otp);
+    await this.mailService.sendOtpEmail(registerUser.email, otp);
+
     const user = await this.userService.createUser(registerUser);
+
+    const stripeCustomer = await this.stripeService.createCustomer({
+      email: user.email,
+      name: `${user.name}`,
+    });
     await this.userService.updateUser(user.id, {
       otp: otp,
+      stripeCustomerId: stripeCustomer.id,
       otpExpiresAt: new Date(Date.now() + 90 * 1000),
     });
+
     return user;
   }
 
@@ -104,9 +113,7 @@ export class AuthService {
     });
   }
 
-  async login(
-    request: LoginDto,
-  ) {
+  async login(request: LoginDto) {
     const user = await this.userService.findByEmail(request.email);
 
     if (!user) {
@@ -188,9 +195,7 @@ export class AuthService {
   //     refreshToken: newRefresh,
   //   };
   // }
-  async validateGoogleUser(
-    profile: GoogleProfileDto,
-  ) {
+  async validateGoogleUser(profile: GoogleProfileDto) {
     const user: UserEntity =
       await this.userService.findOrCreateByGoogleProfile(profile);
     // tạo JWT
