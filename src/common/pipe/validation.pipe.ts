@@ -1,4 +1,5 @@
 import { BadRequestException, ValidationPipeOptions } from "@nestjs/common";
+import { ERROR_MESSAGES } from "../const/const";
 
 export const validationPipeOptions: ValidationPipeOptions = {
   transform: true,                    // auto-transform payload types
@@ -14,7 +15,7 @@ export const validationPipeOptions: ValidationPipeOptions = {
       children: err.children?.length ? formatChildErrors(err.children) : undefined,
     }));
     return new BadRequestException({
-      message: 'Validation failed',
+      message: ERROR_MESSAGES.INVALID_INPUT,
       errors: formattedErrors,
     });
   }

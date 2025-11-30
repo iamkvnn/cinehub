@@ -5,23 +5,23 @@ import { Film } from "./film.entity";
 
 @Entity()
 export class Actor extends BaseEntity {
-    @Column()
+    @Column({ unique: true })
     name: string;
 
     @Column({ enum: Gender, type: 'enum', nullable: true })
-    gender: Gender;
+    gender?: Gender;
 
     @Column({ type: 'text', nullable: true })
-    bio: string;
+    bio?: string;
 
     @Column({ nullable: true })
-    birthDate: Date;
+    birthDate?: Date;
 
     @Column({ nullable: true })
-    nationality: string;
+    nationality?: string;
 
     @Column({ nullable: true })
-    photoUrl: string;
+    photoUrl?: string;
 
     @ManyToMany(() => Film, (film) => film.actors, { eager: false, cascade: false })
     films: Film[];

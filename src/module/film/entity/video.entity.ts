@@ -13,10 +13,10 @@ export class Video extends BaseEntity {
   key: string;
 
   @Column({ nullable: true })
-  maxResolution: number;
+  maxResolution?: number;
 
   @Column({ nullable: true })
-  duration: number;
+  duration?: number;
 
   @Column({ type: 'enum', enum: VideoStatus })
   status: VideoStatus;

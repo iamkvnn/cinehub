@@ -10,10 +10,10 @@ export class Season extends BaseEntity {
     number: number;
 
     @Column({ type: 'timestamp', nullable: true })
-    releaseDate: Date;
+    releaseDate?: Date;
 
     @Column({ type: 'timestamp', nullable: true })
-    endDate: Date;
+    endDate?: Date;
 
     @Column({ type: 'enum', enum: SeasonStatus, default: SeasonStatus.UPCOMING })
     status: SeasonStatus;
