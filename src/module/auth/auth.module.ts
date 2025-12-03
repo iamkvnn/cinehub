@@ -7,7 +7,6 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './service/jwt.strategy';
-import { GoogleStrategy } from './service/google.strategy';
 import { StripeModule } from '../stripe/stripe.module';
 
 @Module({
@@ -28,7 +27,7 @@ import { StripeModule } from '../stripe/stripe.module';
       }),
     }),
   ],
-  providers: [AuthService, JwtStrategy, GoogleStrategy],
+  providers: [AuthService, JwtStrategy],
   controllers: [AuthController],
   exports: [JwtStrategy, PassportModule],
 })

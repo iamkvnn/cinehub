@@ -1,11 +1,7 @@
 import {
   Body,
   Controller,
-  Get,
   Post,
-  Req,
-  Res,
-  UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { AuthService } from '../service/auth.service';
@@ -15,12 +11,8 @@ import { createApiResponse } from 'src/common/utils';
 import { UserDto } from 'src/module/user/dto/user.dto';
 import { plainToInstance } from 'class-transformer';
 import { ResetPasswordDto } from '../dto/reset-password.dto';
-import { LoginDto } from '../dto/login.dto';
+import { GoogleLoginDto, LoginDto } from '../dto/login.dto';
 import { LoginResponseDto } from '../dto/login.response.dto';
-import { JwtAuthGuard } from 'src/common/guard';
-import { AuthGuard } from '@nestjs/passport';
-import type { Request, Response } from 'express';
-
 @ApiTags('Auth')
 @Controller({ path: 'auth', version: '1' })
 export class AuthController {
@@ -107,25 +99,18 @@ export class AuthController {
     );
   }
 
-  @Get('google')
-  @UseGuards(AuthGuard('google'))
-  async googleLogin() {}
-  @Get('google/callback')
-  @UseGuards(AuthGuard('google'))
-  googleCallback(@Req() req: Request, @Res() res: Response) {
-    const user: LoginResponseDto = req.user as LoginResponseDto;
-    return res.redirect(
-      `${process.env.FRONTEND_URL}/auth/callback?token=${user.accessToken}&refreshToken=${user.refreshToken}`,
-    );
-  }
-  @UseGuards(JwtAuthGuard)
-  @Get('test-login')
-  @ApiOperation({ summary: 'Test login' })
+  @Post('google/callback')
+  @ApiOperation({ summary: 'Google OAuth2 Callback' })
   @ApiResponse({
     status: 200,
-    description: 'Login successfully',
+    description: 'Login with Google successfully',
+    type: createApiResponseDto(LoginResponseDto),
   })
-  testLogin(): string {
-    return 'Login ok';
+  async googleCallback(@Body() body: GoogleLoginDto) {
+    return plainToInstance(
+      LoginResponseDto,
+      await this.authService.handleGoogleLogin(body.code, body.codeVerifier),
+      { excludeExtraneousValues: true },
+    );
   }
 }

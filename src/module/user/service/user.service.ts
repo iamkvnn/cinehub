@@ -9,7 +9,7 @@ import { Repository } from 'typeorm';
 import { PaginatedApiQuery } from 'src/common/dto/paginated-query.dto';
 import { CreateUserDto } from '../dto/user.dto';
 import { hashPasswordSync } from 'src/common/utils';
-import { GoogleProfileDto } from 'src/module/auth/dto/google.profile.dto';
+import { GoogleProfileDto } from 'src/module/auth/dto/google.dto';
 
 @Injectable()
 export class UserService {
@@ -78,7 +78,7 @@ export class UserService {
     if (!user) {
       user = this.userRepository.create({
         email: profile.email,
-        name: profile.displayName || `${profile.firstName} ${profile.lastName}`,
+        name: profile.name,
         password: '',
         isVerified: true,
       });

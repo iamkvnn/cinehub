@@ -21,9 +21,9 @@ export default () => ({
   google: {
     clientId: process.env.GOOGLE_CLIENT_ID || '',
     clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
-    callbackURL:
-      process.env.GOOGLE_CALLBACK_URL ||
-      'http://localhost:3000/api/v1/auth/google/callback',
+    tokenUrl: process.env.GOOGLE_TOKEN_URL || 'https://oauth2.googleapis.com/token',
+    userInfoUrl: process.env.GOOGLE_USER_INFO_URL || 'https://www.googleapis.com/oauth2/v3/userinfo',
+    redirectUrl: process.env.GOOGLE_REDIRECT_URL || 'http://localhost:5173/auth/callback',
   },
   aws: {
     accessKey: process.env.S3_ACCESS_KEY || '',

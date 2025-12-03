@@ -13,3 +13,15 @@ export class LoginDto {
   @Expose()
   password: string;
 }
+
+export class GoogleLoginDto {
+  @ApiProperty()
+  @IsString()
+  @Expose()
+  code: string;
+
+  @ApiProperty()
+  @IsString()
+  @Expose()
+  codeVerifier: string;
+}

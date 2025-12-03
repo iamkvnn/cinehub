@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { UserService } from 'src/module/user/service/user.service';
 import { RegisterDto } from '../dto/register.dto';
 import {
@@ -11,17 +11,20 @@ import { ResetPasswordDto } from '../dto/reset-password.dto';
 import { LoginDto } from '../dto/login.dto';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { GoogleProfileDto } from '../dto/google.profile.dto';
+import { GoogleProfileDto, GoogleTokenResponse } from '../dto/google.dto';
 import { UserEntity } from 'src/module/user/entity/user.entity';
 import { StripeService } from 'src/module/stripe/stripe.service';
+import axios from 'axios';
 
 @Injectable()
 export class AuthService {
-  private readonly accessSecret: string;
-  private readonly accessExpire: number;
-
   private readonly refreshSecret: string;
   private readonly refreshExpire: number;
+  private readonly googleTokenUrl: string;
+  private readonly googleUserInfoUrl: string;
+  private readonly googleClientId: string;
+  private readonly googleClientSecret: string;
+  private readonly googleRedirectUrl: string;
   constructor(
     private readonly userService: UserService,
     private readonly mailService: MailService,
@@ -38,17 +41,19 @@ export class AuthService {
       throw new Error('JWT config missing');
     }
 
-    this.accessSecret = jwtConfig.access.secret;
-    this.accessExpire = jwtConfig.access.expired;
     this.refreshSecret = jwtConfig.refresh.secret;
     this.refreshExpire = jwtConfig.refresh.expired;
+    this.googleTokenUrl = this.configService.get<string>('google.tokenUrl', '');
+    this.googleUserInfoUrl = this.configService.get<string>('google.userInfoUrl', '');
+    this.googleClientId = this.configService.get<string>('google.clientId')!;
+    this.googleClientSecret = this.configService.get<string>('google.clientSecret')!;
+    this.googleRedirectUrl = this.configService.get<string>('google.redirectUrl')!;
   }
 
   async registerUser(registerUser: RegisterDto) {
+    const user = await this.userService.createUser(registerUser);
     const otp = generateOtp();
     await this.mailService.sendOtpEmail(registerUser.email, otp);
-
-    const user = await this.userService.createUser(registerUser);
 
     const stripeCustomer = await this.stripeService.createCustomer({
       email: user.email,
@@ -115,31 +120,15 @@ export class AuthService {
 
   async login(request: LoginDto) {
     const user = await this.userService.findByEmail(request.email);
-
-    if (!user) {
-      throw new BadRequestException('Email hoặc mật khẩu không đúng');
-    }
-
     const passwordMatch: boolean = await comparePassword(
       request.password,
       user.password,
     );
-
     if (!passwordMatch) {
       throw new BadRequestException('Email hoặc mật khẩu không đúng');
     }
 
-    const payload = { sub: user.id, email: user.email };
-
-    const accessToken = await this.jwtService.signAsync(payload, {
-      secret: this.accessSecret,
-      expiresIn: this.accessExpire,
-    });
-
-    const refreshToken = await this.jwtService.signAsync(payload, {
-      secret: this.refreshSecret,
-      expiresIn: this.refreshExpire,
-    });
+    const { accessToken, refreshToken } = this.signTokenPair(user);
 
     await this.userService.updateUser(user.id, {
       refreshToken: refreshToken,
@@ -150,6 +139,17 @@ export class AuthService {
       user: user,
     };
   }
+
+  private signTokenPair(user: UserEntity) {
+    const payload = { sub: user.id, email: user.email };
+    const accessToken = this.jwtService.sign(payload);
+    const refreshToken = this.jwtService.sign(payload, {
+      secret: this.refreshSecret,
+      expiresIn: this.refreshExpire,
+    });
+    return { accessToken, refreshToken };
+  }
+
   // async refreshToken(
   //   userId: string,
   //   token: string,
@@ -195,20 +195,63 @@ export class AuthService {
   //     refreshToken: newRefresh,
   //   };
   // }
-  async validateGoogleUser(profile: GoogleProfileDto) {
-    const user: UserEntity =
-      await this.userService.findOrCreateByGoogleProfile(profile);
-    // tạo JWT
-    const payload = { sub: user.id, email: user.email };
-    const accessToken = await this.jwtService.signAsync(payload, {
-      secret: this.accessSecret,
-      expiresIn: this.accessExpire,
-    });
-    const refreshToken = await this.jwtService.signAsync(payload, {
-      secret: this.refreshSecret,
-      expiresIn: this.refreshExpire,
-    });
 
-    return { accessToken, refreshToken, user };
+  async exchangeCodeForToken(
+    code: string,
+    codeVerifier: string,
+  ): Promise<GoogleTokenResponse> {
+    try {
+      const response = await axios.post<GoogleTokenResponse>(
+        this.googleTokenUrl,
+        new URLSearchParams({
+          code,
+          client_id: this.googleClientId,
+          client_secret: this.googleClientSecret,
+          redirect_uri: this.googleRedirectUrl,
+          grant_type: 'authorization_code',
+          code_verifier: codeVerifier,
+        }),
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+        },
+      );
+
+      return response.data;
+    } catch (error) {
+      console.error('Error exchanging code for token:', error);
+      throw new UnauthorizedException('Failed to exchange authorization code');
+    }
+  }
+
+  async getGoogleUserInfo(accessToken: string): Promise<GoogleProfileDto> {
+    try {
+      const response = await axios.get<GoogleProfileDto>(
+        this.googleUserInfoUrl,
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        },
+      );
+
+      return response.data;
+    } catch (error) {
+      throw new UnauthorizedException('Failed to fetch user info');
+    }
+  }
+
+  async handleGoogleLogin(code: string, codeVerifier: string) {
+    const tokenResponse = await this.exchangeCodeForToken(code, codeVerifier);
+    const userInfo = await this.getGoogleUserInfo(tokenResponse.access_token);
+
+    const user: UserEntity =
+      await this.userService.findOrCreateByGoogleProfile(userInfo);
+
+    return {
+      ...this.signTokenPair(user),
+      user,
+    };
   }
 }
