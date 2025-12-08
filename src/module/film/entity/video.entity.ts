@@ -21,8 +21,11 @@ export class Video extends BaseEntity {
   @Column({ type: 'enum', enum: VideoStatus })
   status: VideoStatus;
 
-  @Column()
+  @Column({ type: 'varchar', length: 36 })
   filmId: string;
+
+  @Column({ type: 'varchar', length: 36, nullable: true })
+  episodeId?: string;
 
   @ManyToOne(() => Film, (film) => film.videos, { onDelete: 'CASCADE' })
   film: Film;

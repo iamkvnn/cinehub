@@ -1,6 +1,6 @@
 import { ApiProperty, OmitType } from "@nestjs/swagger";
 import { Expose } from "class-transformer";
-import { IsDate, IsEnum, IsOptional, IsString } from "class-validator";
+import { IsDate, IsDateString, IsEnum, IsOptional, IsString } from "class-validator";
 import { BaseDto } from "src/core/base/base.dto";
 import { Gender } from "src/module/user/const/user.const";
 
@@ -41,9 +41,9 @@ export class ActorDto extends BaseDto {
         nullable: true
     })
     @IsOptional()
-    @IsDate()
+    @IsDateString()
     @Expose()
-    birthDate?: Date;
+    birthDate?: string;
 
     @ApiProperty({
         description: 'Quốc tịch của diễn viên',
@@ -64,6 +64,6 @@ export class ActorDto extends BaseDto {
     photoUrl?: string;
 }
 
-export class UpdateActorDto extends OmitType(ActorDto, ['createdAt', 'updatedAt', 'deletedAt', 'photoUrl']) {}
+export class UpdateActorDto extends OmitType(ActorDto, ['id', 'createdAt', 'updatedAt', 'deletedAt', 'photoUrl']) {}
 
-export class CreateActorDto extends OmitType(UpdateActorDto, ['id']) {}
+export class CreateActorDto extends UpdateActorDto {}

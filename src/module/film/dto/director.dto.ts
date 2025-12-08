@@ -1,6 +1,6 @@
 import { ApiProperty, OmitType } from "@nestjs/swagger";
 import { Expose } from "class-transformer";
-import { IsDate, IsEnum, IsOptional, IsString } from "class-validator";
+import { IsDate, IsDateString, IsEnum, IsOptional, IsString } from "class-validator";
 import { BaseDto } from "src/core/base/base.dto";
 import { Gender } from "src/module/user/const/user.const";
 
@@ -41,9 +41,9 @@ export class DirectorDto extends BaseDto {
         nullable: true
     })
     @IsOptional()
-    @IsDate()
+    @IsDateString()
     @Expose()
-    birthDate?: Date;
+    birthDate?: string;
 
     @ApiProperty({
         description: 'Quốc tịch của đạo diễn',
@@ -64,6 +64,6 @@ export class DirectorDto extends BaseDto {
     photoUrl?: string;
 }
 
-export class UpdateDirectorDto extends OmitType(DirectorDto, ['createdAt', 'updatedAt', 'deletedAt', 'photoUrl']) {}
+export class UpdateDirectorDto extends OmitType(DirectorDto, ['id', 'createdAt', 'updatedAt', 'deletedAt', 'photoUrl']) {}
 
-export class CreateDirectorDto extends OmitType(UpdateDirectorDto, ['id']) {}
+export class CreateDirectorDto extends UpdateDirectorDto {}

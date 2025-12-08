@@ -14,8 +14,8 @@ export class Actor extends BaseEntity {
     @Column({ type: 'text', nullable: true })
     bio?: string;
 
-    @Column({ nullable: true })
-    birthDate?: Date;
+    @Column({ type: 'date', nullable: true })
+    birthDate?: string;
 
     @Column({ nullable: true })
     nationality?: string;

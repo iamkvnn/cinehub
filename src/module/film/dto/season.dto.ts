@@ -1,33 +1,9 @@
-import { ApiProperty, OmitType } from "@nestjs/swagger";
-import { Expose, Type } from "class-transformer";
+import { ApiProperty, PickType } from "@nestjs/swagger";
+import { Expose } from "class-transformer";
 import { BaseDto } from "src/core/base/base.dto";
 import { SeasonStatus } from "../const/const";
-import { IsArray, IsDate, IsNumber, IsOptional, ValidateNested } from "class-validator";
-
-export class EpisodeDto extends BaseDto {
-    @ApiProperty({
-        description: 'Tập thứ',
-        example: 1,
-    })
-    @IsNumber()
-    @Expose()
-    number: number;
-
-    @ApiProperty({
-        description: 'Ngày phát hành tập',
-        example: '2020-01-01',
-        required: false,
-        nullable: true
-    })
-    @IsDate()
-    @IsOptional()
-    @Expose()
-    releaseDate?: Date;
-}
-
-export class UpdateEpisodeDto extends OmitType(EpisodeDto, ['createdAt', 'updatedAt', 'deletedAt']) {}
-
-export class CreateEpisodeDto extends OmitType(UpdateEpisodeDto, ['id']) {}
+import { IsDate, IsNumber, IsOptional } from "class-validator";
+import { EpisodeDto } from "./episode.dto";
 
 export class SeasonDto extends BaseDto {
     @ApiProperty({
@@ -76,26 +52,6 @@ export class SeasonDto extends BaseDto {
     episodes: EpisodeDto[];
 }
 
-export class UpdateSeasonDto extends OmitType(SeasonDto, ['createdAt', 'updatedAt', 'deletedAt', 'episodes']) {
-    @ApiProperty({
-        description: 'Tập phim',
-        type: [UpdateEpisodeDto],
-    })
-    @IsArray()
-    @ValidateNested({ each: true })
-    @Type(() => UpdateEpisodeDto)
-    @IsOptional()
-    episodes?: UpdateEpisodeDto[];
-}
+export class UpdateSeasonDto extends PickType(SeasonDto, ['releaseDate', 'endDate', 'status']) { }
 
-export class CreateSeasonDto extends OmitType(UpdateSeasonDto, ['id', 'episodes']) {
-    @ApiProperty({
-        description: 'Tập phim',
-        type: [CreateEpisodeDto],
-    })
-    @IsArray()
-    @ValidateNested({ each: true })
-    @Type(() => CreateEpisodeDto)
-    @IsOptional()
-    episodes?: CreateEpisodeDto[];
-}
+export class CreateSeasonDto extends UpdateSeasonDto { }
