@@ -30,16 +30,16 @@ export class SeasonController {
     );
   }
 
-  @ApiOperation({ summary: 'Lấy thông tin mùa phim theo ID' })
+  @ApiOperation({ summary: 'Lấy thông tin mùa phim theo số mùa' })
   @ApiResponse({
     status: 200,
-    description: 'Lấy thông tin mùa phim theo ID',
+    description: 'Lấy thông tin mùa phim theo số mùa',
     type: createApiResponseDto(SeasonDto),
   })
-  @ApiParam({ name: 'id', description: 'Season ID' })
-  @Get('/:id')
-  async getSeasonById(@Param('id') id: string, @Param('filmId') filmId: string) {
-    const data = await this.seasonService.findOne(filmId, id);
+  @ApiParam({ name: 'season', description: 'Season number' })
+  @Get('/:season')
+  async getSeasonById(@Param('season') season: number, @Param('filmId') filmId: string) {
+    const data = await this.seasonService.findOne(filmId, season);
     return createApiResponse(
       plainToInstance(SeasonDto, data, { excludeExtraneousValues: true } ),
     );
@@ -54,31 +54,31 @@ export class SeasonController {
   async createSeason(@Body() createDto: CreateSeasonDto, @Query('filmId') filmId: string) {
     const data = await this.seasonService.create(filmId, createDto);
     return createApiResponse(
-      plainToInstance(SeasonDto, data),
+      plainToInstance(SeasonDto, data, { excludeExtraneousValues: true }),
     );
   }
 
-  @Put(':id')
+  @Put(':season')
   @ApiOperation({ summary: 'Cập nhật thông tin mùa phim' })
   @ApiResponse({
     status: 200,
     description: 'Cập nhật thông tin mùa phim',
     type: createApiResponseDto(SeasonDto),
   })
-  async updateSeason(@Param('filmId') filmId: string, @Param('id') id: string, @Body() updateDto: UpdateSeasonDto) {
-    const data = await this.seasonService.update(filmId, id, updateDto);
+  async updateSeason(@Param('filmId') filmId: string, @Param('season') season: number, @Body() updateDto: UpdateSeasonDto) {
+    const data = await this.seasonService.update(filmId, season, updateDto);
     return createApiResponse(
       plainToInstance(SeasonDto, data, { excludeExtraneousValues: true }),
     );
   }
 
-  @Delete(':id')
+  @Delete(':season')
   @ApiOperation({ summary: 'Xóa mùa phim' })
   @ApiResponse({
     status: 200,
     description: 'Xóa mùa phim',
   })
-  async deleteSeason(@Param('filmId') filmId: string, @Param('id') id: string) {
-    await this.seasonService.delete(filmId, id);
+  async deleteSeason(@Param('filmId') filmId: string, @Param('season') season: number) {
+    await this.seasonService.delete(filmId, season);
   }    
 }

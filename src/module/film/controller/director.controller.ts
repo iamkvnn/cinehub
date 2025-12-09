@@ -54,7 +54,7 @@ export class DirectorController {
   async createDirector(@Body() createDto: CreateDirectorDto) {
     const data = await this.directorService.create(createDto);
     return createApiResponse(
-      plainToInstance(DirectorDto, data),
+      plainToInstance(DirectorDto, data, { excludeExtraneousValues: true }),
     );
   }
 

@@ -54,7 +54,7 @@ export class ActorController {
   async createActor(@Body() createDto: CreateActorDto) {
     const data = await this.actorService.create(createDto);
     return createApiResponse(
-      plainToInstance(ActorDto, data),
+      plainToInstance(ActorDto, data, { excludeExtraneousValues: true } ),
     );
   }
 

@@ -24,17 +24,10 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     return super.canActivate(context);
   }
 
-  handleRequest(err, user, info, context: ExecutionContext) {
+  handleRequest(err, user, info) {
     if (err || !user) {
       throw err || new UnauthorizedException();
     }
-
-    // Gắn user vào request object
-    const request = context.switchToHttp().getRequest();
-    request.user = user;
-
-    console.log('JWT Guard - User payload:', user);
-
     return user;
   }
 }

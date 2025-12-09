@@ -16,11 +16,11 @@ export class EpisodeService {
         private readonly seasonService: SeasonService,
     ) {}
 
-    async find(filmId: string, seasonId: string, query: PaginatedApiQuery): Promise<[Episode[], number]> {
-        await this.seasonService.findOne(filmId, seasonId);
+    async find(filmId: string, season: number, query: PaginatedApiQuery): Promise<[Episode[], number]> {
+        const seasonEntity = await this.seasonService.findOne(filmId, season);
         const { limit, page, search, sort } = query;
         const qb = this.repository.createQueryBuilder('s')
-            .where('s.seasonId = :seasonId', { seasonId });
+            .where('s.seasonId = :seasonId', { seasonId: seasonEntity.id });
 
         if (search) {
             qb.where('s.number LIKE :number', { number: `%${search}%` });
@@ -41,22 +41,21 @@ export class EpisodeService {
         return await qb.getManyAndCount();
     }
 
-    async findOne(filmId: string, seasonId: string, id: string): Promise<Episode> {
-        await this.seasonService.findOne(filmId, seasonId);
-        const entity = await this.repository.findOneBy({ id, seasonId });
+    async findOne(filmId: string, season: number, number: number): Promise<Episode> {
+        const entity = await this.repository.findOne({ where: { season: { number: season, film: { id: filmId } }, number }, relations: ['season', 'season.film'] });
         if (!entity) {
             throw new BadRequestException(ERROR_MESSAGES.NOT_FOUND);
         }
         return entity;
     }
 
-    async create(filmId: string, seasonId: string, dto: CreateEpisodeDto): Promise<Episode> {
+    async create(filmId: string, season: number, dto: CreateEpisodeDto): Promise<Episode> {
         try {
-            await this.seasonService.findOne(filmId, seasonId);
+            const seasonEntity = await this.seasonService.findOne(filmId, season);
             return await this.repository.save({
                 ...dto,
-                seasonId,
-                number: await this.countBySeasonId(seasonId) + 1,
+                seasonId: seasonEntity.id,
+                number: await this.countBySeasonId(seasonEntity.id) + 1,
             });
         } catch (error) {
             handleDbExceptions(error);
@@ -67,9 +66,9 @@ export class EpisodeService {
         return await this.repository.count({ where: { seasonId } });
     }
 
-    async update(filmId: string, seasonId: string, id: string, dto: UpdateEpisodeDto): Promise<Episode> {
+    async update(filmId: string, season: number, number: number, dto: UpdateEpisodeDto): Promise<Episode> {
         try {
-            const entity = await this.findOne(filmId, seasonId, id);
+            const entity = await this.findOne(filmId, season, number);
             Object.assign(entity, dto);
             return await this.repository.save(entity);
         } catch (error) {
@@ -77,8 +76,8 @@ export class EpisodeService {
         }
     }
 
-    async delete(filmId: string, seasonId: string, id: string): Promise<void> {
-        const entity = await this.findOne(filmId, seasonId, id);
+    async delete(filmId: string, season: number, number: number): Promise<void> {
+        const entity = await this.findOne(filmId, season, number);
         await this.repository.delete({
             seasonId: entity.seasonId,
             number: MoreThanOrEqual(entity.number),

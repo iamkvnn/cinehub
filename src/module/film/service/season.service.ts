@@ -41,8 +41,8 @@ export class SeasonService {
         return await qb.getManyAndCount();
     }
 
-    async findOne(filmId: string, id: string): Promise<Season> {
-        const entity = await this.repository.findOneBy({ id, filmId });
+    async findOne(filmId: string, season: number): Promise<Season> {
+        const entity = await this.repository.findOneBy({ number: season, filmId });
         if (!entity) {
             throw new BadRequestException(ERROR_MESSAGES.NOT_FOUND);
         }
@@ -66,9 +66,9 @@ export class SeasonService {
         return await this.repository.count({ where: { filmId } });
     }
 
-    async update(filmId: string, id: string, dto: UpdateSeasonDto): Promise<Season> {
+    async update(filmId: string, season: number, dto: UpdateSeasonDto): Promise<Season> {
         try {
-            const entity = await this.findOne(filmId, id);
+            const entity = await this.findOne(filmId, season);
             Object.assign(entity, dto);
             return await this.repository.save(entity);
         } catch (error) {
@@ -76,8 +76,8 @@ export class SeasonService {
         }
     }
 
-    async delete(filmId: string, id: string): Promise<void> {
-        const entity = await this.findOne(filmId, id);
+    async delete(filmId: string, season: number): Promise<void> {
+        const entity = await this.findOne(filmId, season);
         await this.repository.delete({
             filmId: entity.filmId,
             number: MoreThanOrEqual(entity.number),

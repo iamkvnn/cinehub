@@ -9,6 +9,7 @@ import {
 } from './common/interceptor';
 import { DocumentBuilder } from '@nestjs/swagger/dist/document-builder';
 import { SwaggerModule } from '@nestjs/swagger/dist/swagger-module';
+import { JwtAuthGuard } from './common/guard';
 declare const module: any;
 
 async function bootstrap() {
