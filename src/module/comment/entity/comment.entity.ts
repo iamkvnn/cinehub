@@ -2,7 +2,7 @@ import { BaseEntity } from "src/core/base/base.entity";
 import { Film } from "src/module/film/entity/film.entity";
 import { Review } from "src/module/review/entity/review.entity";
 import { UserEntity } from "src/module/user/entity/user.entity";
-import { Column, Entity, JoinColumn, ManyToOne, OneToOne } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne } from "typeorm";
 
 @Entity()
 export class Comment extends BaseEntity {
@@ -23,6 +23,13 @@ export class Comment extends BaseEntity {
 
     @Column({ type: 'varchar', length: 36, nullable: true })
     parentId?: string;
+
+    @ManyToOne(() => Comment, comment => comment.id, { onDelete: 'CASCADE', nullable: true })
+    @JoinColumn({ name: 'parentId' })
+    parentComment?: Comment;
+
+    @OneToMany(() => Comment, comment => comment.parentComment)
+    replies: Comment[];
 
     @Column({ type: 'varchar', length: 36 })
     authorId: string;

@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Comment } from "../entity/comment.entity";
-import { FindOptionsWhere, Repository } from "typeorm";
+import { FindOptionsWhere, IsNull, Repository } from "typeorm";
 import { CreateCommentDto, UpdateCommentDto } from "../dto/comment.dto";
 import { UserService } from "src/module/user/service/user.service";
 import { FilmService } from "src/module/film/service/film.service";
@@ -25,12 +25,12 @@ export class CommentService {
         const where: FindOptionsWhere<Comment> = {
             filmId: query.filmId,
             reviewId: query.reviewId,
-            parentId: query.parentId,
+            parentId: query.parentId || IsNull(),
         };
 
         return await this.repository.findAndCount({
             where,
-            relations: ['author'],
+            relations: ['author', 'replies'],
             skip: (query.page - 1) * query.limit,
             take: query.limit,
             order: { createdAt: 'DESC' },

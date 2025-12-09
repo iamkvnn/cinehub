@@ -1,14 +1,13 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsOptional } from "class-validator";
+import { IsNumber, IsOptional, IsString } from "class-validator";
 
 export class CommentQueryDto {
     @ApiProperty({
         description: 'ID phim',
         example: 'film12345',
-        required: false,
     })
-    @IsOptional()
-    filmId?: string;
+    @IsString()
+    filmId: string;
 
     @ApiProperty({
         description: 'tập phim',
@@ -16,6 +15,7 @@ export class CommentQueryDto {
         required: false,
     })
     @IsOptional()
+    @IsNumber()
     episode?: number;
 
     @ApiProperty({
@@ -24,6 +24,7 @@ export class CommentQueryDto {
         required: false,
     })
     @IsOptional()
+    @IsNumber()
     season?: number;
 
     @ApiProperty({
@@ -32,6 +33,7 @@ export class CommentQueryDto {
         required: false,
     })
     @IsOptional()
+    @IsString()
     reviewId?: string;
 
     @ApiProperty({
@@ -40,6 +42,7 @@ export class CommentQueryDto {
         required: false,
     })
     @IsOptional()
+    @IsString()
     parentId?: string;
 
     @ApiProperty({
@@ -49,6 +52,7 @@ export class CommentQueryDto {
         default: 1,
     })
     @IsOptional()
+    @IsNumber()
     page: number = 1;
 
     @ApiProperty({
@@ -58,5 +62,6 @@ export class CommentQueryDto {
         default: 10,
     })
     @IsOptional()
+    @IsNumber()
     limit: number = 10;
 }

@@ -1,15 +1,17 @@
 import { BadRequestException } from '@nestjs/common';
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsOptional } from 'class-validator';
+import { IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class PaginatedApiQuery {
   @ApiProperty({ description: 'Current page', example: 1, default: 1 })
   @IsOptional()
+  @IsNumber()
   page: number = 1;
 
   @ApiProperty({ description: 'Items per page', example: 10, default: 10 })
   @IsOptional()
+  @IsNumber()
   limit: number = 10;
 
   @ApiProperty({
@@ -33,6 +35,7 @@ export class PaginatedApiQuery {
     type: 'string',
     required: false,
   })
+  @IsString()
   @IsOptional()
   search?: string;
 }

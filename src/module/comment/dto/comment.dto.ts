@@ -1,5 +1,5 @@
 import { ApiProperty, PickType } from "@nestjs/swagger";
-import { Expose, Type } from "class-transformer";
+import { Expose, Transform, Type } from "class-transformer";
 import { IsNumber, IsOptional, IsString, ValidateIf } from "class-validator";
 import { BaseDto } from "src/core/base/base.dto";
 import { UserDto } from "src/module/user/dto/user.dto";
@@ -26,6 +26,14 @@ export class CommentDto extends BaseDto {
     })
     @Expose()
     totalDislikes: number;
+
+    @ApiProperty({
+        description: 'Tổng số phản hồi',
+        example: 2,
+    })
+    @Transform(({ obj }) => obj.replies?.length || 0)
+    @Expose()
+    totalReplies: number;
 
     @ApiProperty({
         description: 'Mùa (nếu bình luận về một tập phim)',
