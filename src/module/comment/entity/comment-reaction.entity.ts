@@ -2,11 +2,7 @@ import { BaseEntity } from "src/core/base/base.entity";
 import { UserEntity } from "src/module/user/entity/user.entity";
 import { Column, Entity, JoinColumn, ManyToOne, Unique } from "typeorm";
 import { Comment } from "./comment.entity";
-
-export enum ReactionType {
-    LIKE = 'like',
-    DISLIKE = 'dislike',
-}
+import { ReactionType } from "../const/const";
 
 @Entity()
 @Unique(['userId', 'commentId'])

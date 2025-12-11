@@ -1,11 +1,12 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { Repository } from "typeorm";
-import { CommentReaction, ReactionType } from "../entity/comment-reaction.entity";
-import { CommentReport, ReportReason } from "../entity/comment-report.entity";
+import { CommentReaction } from "../entity/comment-reaction.entity";
+import { CommentReport } from "../entity/comment-report.entity";
 import { Comment } from "../entity/comment.entity";
 import { CreateCommentReactionDto, CommentReactionResponseDto } from "../dto/comment-reaction.dto";
 import { ERROR_MESSAGES } from "src/common/const/const";
+import { ReactionType, ReportReason } from "../const/const";
 
 @Injectable()
 export class CommentReactionService {
@@ -18,12 +19,6 @@ export class CommentReactionService {
         private readonly commentRepository: Repository<Comment>,
     ) {}
 
-    /**
-     * Like hoặc Dislike một comment
-     * - Nếu chưa có reaction -> tạo mới
-     * - Nếu đã có reaction cùng loại -> xóa (toggle off)
-     * - Nếu đã có reaction khác loại -> đổi loại
-     */
     async react(userId: string, dto: CreateCommentReactionDto): Promise<CommentReactionResponseDto> {
         const comment = await this.commentRepository.findOne({ where: { id: dto.commentId } });
         if (!comment) {
@@ -100,33 +95,6 @@ export class CommentReactionService {
         }
     }
 
-    /**
-     * Lấy trạng thái reaction của user đối với một comment
-     */
-    async getReactionStatus(userId: string | null, commentId: string): Promise<CommentReactionResponseDto> {
-        const comment = await this.commentRepository.findOne({ where: { id: commentId } });
-        if (!comment) {
-            throw new NotFoundException(ERROR_MESSAGES.NOT_FOUND);
-        }
-
-        let userReaction: ReactionType | null = null;
-        if (userId) {
-            const reaction = await this.reactionRepository.findOne({
-                where: { userId, commentId },
-            });
-            userReaction = reaction?.type || null;
-        }
-
-        return {
-            totalLikes: comment.totalLikes,
-            totalDislikes: comment.totalDislikes,
-            userReaction,
-        };
-    }
-
-    /**
-     * Report một comment
-     */
     async report(userId: string, commentId: string, reason: ReportReason, description?: string): Promise<CommentReport> {
         const comment = await this.commentRepository.findOne({ where: { id: commentId } });
         if (!comment) {
@@ -153,29 +121,5 @@ export class CommentReactionService {
             reason,
             description,
         });
-    }
-
-    /**
-     * Xóa reaction của user
-     */
-    async removeReaction(userId: string, commentId: string): Promise<void> {
-        const comment = await this.commentRepository.findOne({ where: { id: commentId } });
-        if (!comment) {
-            throw new NotFoundException(ERROR_MESSAGES.NOT_FOUND);
-        }
-
-        const reaction = await this.reactionRepository.findOne({
-            where: { userId, commentId },
-        });
-
-        if (reaction) {
-            if (reaction.type === ReactionType.LIKE) {
-                comment.totalLikes = Math.max(0, comment.totalLikes - 1);
-            } else {
-                comment.totalDislikes = Math.max(0, comment.totalDislikes - 1);
-            }
-            await this.commentRepository.save(comment);
-            await this.reactionRepository.delete({ id: reaction.id });
-        }
     }
 }

@@ -81,8 +81,6 @@ export class CommentController {
     await this.commentService.delete(user.id, id);
   }
 
-  // ==================== Reaction APIs ====================
-
   @Post('reaction')
   @ApiOperation({ summary: 'Like hoặc Dislike một bình luận' })
   @ApiResponse({
@@ -93,39 +91,9 @@ export class CommentController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   async react(@Body() dto: CreateCommentReactionDto, @User() user) {
-    console.log('Reacting to comment with DTO:', dto, 'by user:', user);
-    const data = await this.commentReactionService.react(user.userId, dto);
+    const data = await this.commentReactionService.react(user.id, dto);
     return createApiResponse(data);
   }
-
-  @Get(':id/reaction')
-  @ApiOperation({ summary: 'Lấy trạng thái reaction của một bình luận' })
-  @ApiResponse({
-    status: 200,
-    description: 'Trả về số lượng like/dislike và reaction của user hiện tại (nếu đăng nhập)',
-    type: createApiResponseDto(CommentReactionResponseDto),
-  })
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  async getReactionStatus(@Param('id') id: string, @User() user) {
-    const data = await this.commentReactionService.getReactionStatus(user?.id || null, id);
-    return createApiResponse(data);
-  }
-
-  @Delete(':id/reaction')
-  @ApiOperation({ summary: 'Xóa reaction của user đối với một bình luận' })
-  @ApiResponse({
-    status: 200,
-    description: 'Xóa reaction thành công',
-  })
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  async removeReaction(@Param('id') id: string, @User() user) {
-    await this.commentReactionService.removeReaction(user.id, id);
-    return createApiResponse({ message: 'Đã xóa reaction' });
-  }
-
-  // ==================== Report APIs ====================
 
   @Post('report')
   @ApiOperation({ summary: 'Báo cáo một bình luận vi phạm' })

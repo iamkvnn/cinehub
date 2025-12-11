@@ -2,22 +2,7 @@ import { BaseEntity } from "src/core/base/base.entity";
 import { UserEntity } from "src/module/user/entity/user.entity";
 import { Column, Entity, JoinColumn, ManyToOne, Unique } from "typeorm";
 import { Review } from "./review.entity";
-
-export enum ReportReason {
-    SPAM = 'spam',
-    HARASSMENT = 'harassment',
-    HATE_SPEECH = 'hate_speech',
-    MISINFORMATION = 'misinformation',
-    INAPPROPRIATE = 'inappropriate',
-    OTHER = 'other',
-}
-
-export enum ReportStatus {
-    PENDING = 'pending',
-    REVIEWED = 'reviewed',
-    RESOLVED = 'resolved',
-    DISMISSED = 'dismissed',
-}
+import { ReportReason, ReportStatus } from "src/module/comment/const/const";
 
 @Entity()
 @Unique(['userId', 'reviewId'])

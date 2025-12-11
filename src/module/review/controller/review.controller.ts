@@ -79,8 +79,6 @@ export class ReviewController {
     await this.reviewService.delete(user.id, id);
   }
 
-  // ==================== Reaction APIs ====================
-
   @Post('reaction')
   @ApiOperation({ summary: 'Like hoặc Dislike một đánh giá' })
   @ApiResponse({
@@ -94,35 +92,6 @@ export class ReviewController {
     const data = await this.reviewReactionService.react(user.userId, dto);
     return createApiResponse(data);
   }
-
-  @Get(':id/reaction')
-  @ApiOperation({ summary: 'Lấy trạng thái reaction của một đánh giá' })
-  @ApiResponse({
-    status: 200,
-    description: 'Trả về số lượng like/dislike và reaction của user hiện tại (nếu đăng nhập)',
-    type: createApiResponseDto(ReviewReactionResponseDto),
-  })
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  async getReactionStatus(@Param('id') id: string, @User() user) {
-    const data = await this.reviewReactionService.getReactionStatus(user?.id || null, id);
-    return createApiResponse(data);
-  }
-
-  @Delete(':id/reaction')
-  @ApiOperation({ summary: 'Xóa reaction của user đối với một đánh giá' })
-  @ApiResponse({
-    status: 200,
-    description: 'Xóa reaction thành công',
-  })
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  async removeReaction(@Param('id') id: string, @User() user) {
-    await this.reviewReactionService.removeReaction(user.id, id);
-    return createApiResponse({ message: 'Đã xóa reaction' });
-  }
-
-  // ==================== Report APIs ====================
 
   @Post('report')
   @ApiOperation({ summary: 'Báo cáo một đánh giá vi phạm' })

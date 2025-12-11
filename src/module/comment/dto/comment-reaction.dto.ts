@@ -1,10 +1,8 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Expose } from "class-transformer";
 import { IsEnum, IsString, IsOptional } from "class-validator";
-import { ReactionType } from "../entity/comment-reaction.entity";
-import { ReportReason } from "../entity/comment-report.entity";
-
-// ==================== Reaction DTOs ====================
+import { ReportReason } from "../const/const";
+import { ReactionType } from "../const/const";
 
 export class CreateCommentReactionDto {
     @ApiProperty({
@@ -78,8 +76,6 @@ export class CommentReactionResponseDto {
     @Expose()
     userReaction: ReactionType | null;
 }
-
-// ==================== Report DTOs ====================
 
 export class CreateCommentReportDto {
     @ApiProperty({

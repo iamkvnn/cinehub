@@ -15,6 +15,7 @@ import { GoogleProfileDto, GoogleTokenResponse } from '../dto/google.dto';
 import { UserEntity } from 'src/module/user/entity/user.entity';
 import { StripeService } from 'src/module/stripe/stripe.service';
 import axios from 'axios';
+import { JwtPayload } from '../dto/jwt-payload';
 
 @Injectable()
 export class AuthService {
@@ -141,7 +142,7 @@ export class AuthService {
   }
 
   private signTokenPair(user: UserEntity) {
-    const payload = { sub: user.id, email: user.email };
+    const payload = { sub: user.id, email: user.email } as JwtPayload;
     const accessToken = this.jwtService.sign(payload);
     const refreshToken = this.jwtService.sign(payload, {
       secret: this.refreshSecret,
