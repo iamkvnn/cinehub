@@ -89,6 +89,7 @@ export class UserService {
   }
   async findById(id: string): Promise<UserEntity> {
     const user = await this.userRepository.findOne({ where: { id } });
+    console.log('Finding user by ID:', id, 'Found user:', user);
     if (!user) {
       throw new NotFoundException('Người dùng không tồn tại');
     }

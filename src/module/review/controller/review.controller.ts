@@ -5,14 +5,17 @@ import { ReviewDto, CreateReviewDto, UpdateReviewDto } from "../dto/review.dto";
 import { createApiResponse, createPaginatedApiResponse } from "src/common/utils";
 import { plainToInstance } from "class-transformer";
 import { ReviewService } from "../service/review.service";
+import { ReviewReactionService } from "../service/review-reaction.service";
 import { User } from "src/common/decorator/user.decorator";
 import { JwtAuthGuard } from "src/common/guard";
+import { CreateReviewReactionDto, ReviewReactionResponseDto, CreateReviewReportDto, ReviewReportDto } from "../dto/review-reaction.dto";
 
 @Controller('reviews')
 @ApiTags('Reviews')
 export class ReviewController {
     constructor(
         private readonly reviewService: ReviewService,
+        private readonly reviewReactionService: ReviewReactionService,
     ) { }
 
   @Get()
@@ -74,5 +77,66 @@ export class ReviewController {
   @ApiBearerAuth()
   async delete(@Param('id') id: string, @User() user) {
     await this.reviewService.delete(user.id, id);
-  }    
+  }
+
+  // ==================== Reaction APIs ====================
+
+  @Post('reaction')
+  @ApiOperation({ summary: 'Like hoặc Dislike một đánh giá' })
+  @ApiResponse({
+    status: 200,
+    description: 'Trả về trạng thái reaction sau khi thao tác',
+    type: createApiResponseDto(ReviewReactionResponseDto),
+  })
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  async react(@Body() dto: CreateReviewReactionDto, @User() user) {
+    const data = await this.reviewReactionService.react(user.userId, dto);
+    return createApiResponse(data);
+  }
+
+  @Get(':id/reaction')
+  @ApiOperation({ summary: 'Lấy trạng thái reaction của một đánh giá' })
+  @ApiResponse({
+    status: 200,
+    description: 'Trả về số lượng like/dislike và reaction của user hiện tại (nếu đăng nhập)',
+    type: createApiResponseDto(ReviewReactionResponseDto),
+  })
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  async getReactionStatus(@Param('id') id: string, @User() user) {
+    const data = await this.reviewReactionService.getReactionStatus(user?.id || null, id);
+    return createApiResponse(data);
+  }
+
+  @Delete(':id/reaction')
+  @ApiOperation({ summary: 'Xóa reaction của user đối với một đánh giá' })
+  @ApiResponse({
+    status: 200,
+    description: 'Xóa reaction thành công',
+  })
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  async removeReaction(@Param('id') id: string, @User() user) {
+    await this.reviewReactionService.removeReaction(user.id, id);
+    return createApiResponse({ message: 'Đã xóa reaction' });
+  }
+
+  // ==================== Report APIs ====================
+
+  @Post('report')
+  @ApiOperation({ summary: 'Báo cáo một đánh giá vi phạm' })
+  @ApiResponse({
+    status: 201,
+    description: 'Báo cáo đánh giá thành công',
+    type: createApiResponseDto(ReviewReportDto),
+  })
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  async report(@Body() dto: CreateReviewReportDto, @User() user) {
+    const data = await this.reviewReactionService.report(user.id, dto.reviewId, dto.reason, dto.description);
+    return createApiResponse(
+      plainToInstance(ReviewReportDto, data, { excludeExtraneousValues: true }),
+    );
+  }
 }
