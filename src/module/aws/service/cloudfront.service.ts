@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { getSignedUrl } from '@aws-sdk/cloudfront-signer';
+import { getSignedCookies, getSignedUrl } from '@aws-sdk/cloudfront-signer';
 import * as fs from 'fs';
 import {
   CloudFrontClient,
@@ -61,7 +61,7 @@ export class CloudFrontService {
   }
 
   generateSignedCookies(resourcePath: string, expirationMinutes: number = 60) {
-    const policy = {
+    const policy = JSON.stringify({
       Statement: [
         {
           Resource: `https://${this.cloudfrontDomain}/${resourcePath}*`,
@@ -73,14 +73,18 @@ export class CloudFrontService {
           },
         },
       ],
-    };
+    });
+
+    const cookies = getSignedCookies({
+      policy,
+      privateKey: this.privateKey,
+      keyPairId: this.keyPairId,
+    });
 
     return {
-      'CloudFront-Policy': Buffer.from(JSON.stringify(policy)).toString(
-        'base64',
-      ),
-      'CloudFront-Signature': 'signature-here',
-      'CloudFront-Key-Pair-Id': this.keyPairId,
+      'CloudFront-Policy': cookies['CloudFront-Policy'],
+      'CloudFront-Signature': cookies['CloudFront-Signature'],
+      'CloudFront-Key-Pair-Id': cookies['CloudFront-Key-Pair-Id'],
     };
   }
 

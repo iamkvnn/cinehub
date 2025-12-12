@@ -18,12 +18,12 @@ export class StreamService {
   ) {}
 
   async getStreamingUrl(
-    //userId: string,
+    userId: string,
     filmId: string,
     season?: number,
     episode?: number,
   ): Promise<string> {
-    //const user = await this.userService.findById(userId);
+    const user = await this.userService.findById(userId);
     await this.filmService.verifyFilmType(filmId, season, episode);
     const video = await this.videoService.findOne(filmId, season, episode);
     let masterContent = await this.s3Service.getHLSFile(video.key);

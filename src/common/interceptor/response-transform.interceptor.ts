@@ -32,14 +32,12 @@ export class ResponseTransformInterceptor<T>
               path: request.url,
               timestamp: new Date().toISOString(),
             }
-          : data instanceof StreamableFile
-            ? data
-            : {
-                success: true,
-                data,
-                path: request.url,
-                timestamp: new Date().toISOString(),
-              },
+          : {
+              success: true,
+              data,
+              path: request.url,
+              timestamp: new Date().toISOString(),
+          }
       ),
     );
   }
