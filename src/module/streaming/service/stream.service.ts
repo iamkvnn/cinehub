@@ -55,7 +55,7 @@ export class StreamService {
 
   signUrls(masterContent: string, video: Video): string {
     return masterContent.replace(/(\d+\/index\.m3u8)/g, (match) =>
-      this.cloudFrontService.generateSignedUrl(`${video.key}/${match}`, 60),
+      this.cloudFrontService.getCloudfrontUrl(`${video.key}/${match}`),
     );
   }
 }
