@@ -18,10 +18,11 @@ import { ActorController } from './controller/actor.controller';
 import { DirectorController } from './controller/director.controller';
 import { SeasonController } from './controller/season.controller';
 import { EpisodeController } from './controller/episode.controller';
+import { Cast } from './entity/cast';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Film, Genre, Video, Actor, Director, Season, Episode]),
+    TypeOrmModule.forFeature([Film, Genre, Video, Actor, Director, Season, Episode, Cast]),
     MediaModule,
   ],
   controllers: [FilmController, EpisodeController, SeasonController, DirectorController, ActorController],

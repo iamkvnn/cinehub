@@ -25,8 +25,6 @@ export class CommentReactionService {
             throw new NotFoundException(ERROR_MESSAGES.NOT_FOUND);
         }
 
-        console.log('Comment found:', comment, 'DTO:', dto, 'UserId:', userId);
-
         const existingReaction = await this.reactionRepository.findOne({
             where: { userId, commentId: dto.commentId },
         });

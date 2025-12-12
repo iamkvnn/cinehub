@@ -40,7 +40,7 @@ export default () => ({
     },
   },
   videos: {
-    outputDir: process.env.TRANSFORMS_OUTPUT_DIR || '/tmp/videos',
+    outputDir: process.env.TRANSFORMS_OUTPUT_DIR || '/tmp',
   },
   stripe: {
     secretKey: process.env.STRIPE_SECRET_KEY || '',

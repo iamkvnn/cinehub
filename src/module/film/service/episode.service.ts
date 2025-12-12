@@ -25,6 +25,7 @@ export class EpisodeService {
         if (search) {
             qb.where('s.number LIKE :number', { number: `%${search}%` });
         }
+        qb.addOrderBy('s.number', 'ASC');
 
         if (sort) {
             Object.entries(sort).forEach(([key, value]) => {

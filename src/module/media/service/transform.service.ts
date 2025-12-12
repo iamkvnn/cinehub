@@ -26,15 +26,13 @@ export class TransformService {
     }
 
     async convertToHLS(inputPath: string, outputDir: string, videoHeight?: number): Promise<boolean> {
+        this.logger.log(`Starting HLS conversion for ${inputPath}...`);
         if (!fs.existsSync(outputDir)) {
             fs.mkdirSync(outputDir, { recursive: true });
         }
 
         const inputHeight = this.getVideoResolution(inputPath).height;
-
-        this.logger.log("Source video height: " + inputHeight);
         const ladder = DEFAULT_LADDER.filter(r => r.height <= inputHeight);
-
         if (ladder.length === 0) {
             this.logger.error("No suitable output resolutions.");
             return false;

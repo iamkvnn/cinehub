@@ -13,8 +13,8 @@ import { WhistlesEntity } from 'src/module/whistles/entity/whistles.entity';
 import { WatchHistoryEntity } from 'src/module/watch-history/entity/watch-history.entity';
 import { AgeLimit, FilmStatus, FilmType } from '../const/const';
 import { Director } from './director';
-import { Actor } from './actor';
 import { Season } from './season';
+import { Cast } from './cast';
 
 @Entity()
 export class Film extends BaseEntity {
@@ -66,11 +66,10 @@ export class Film extends BaseEntity {
   @JoinTable()
   directors: Director[];
 
-  @ManyToMany(() => Actor, (actor) => actor.films, {
+  @OneToMany(() => Cast, (cast) => cast.film, {
     cascade: true,
   })
-  @JoinTable()
-  actors: Actor[];
+  casts: Cast[];
 
   @OneToMany(() => Poster, (poster) => poster.film, {
     cascade: true,

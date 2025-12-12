@@ -1,7 +1,7 @@
 import { BaseEntity } from "src/core/base/base.entity";
 import { Gender } from "src/module/user/const/user.const";
-import { Column, Entity, ManyToMany } from "typeorm";
-import { Film } from "./film.entity";
+import { Column, Entity, OneToMany } from "typeorm";
+import { Cast } from "./cast";
 
 @Entity()
 export class Actor extends BaseEntity {
@@ -23,6 +23,6 @@ export class Actor extends BaseEntity {
     @Column({ nullable: true })
     photoUrl?: string;
 
-    @ManyToMany(() => Film, (film) => film.actors, { eager: false, cascade: false })
-    films: Film[];
+    @OneToMany(() => Cast, (cast) => cast.actor, { cascade: true })
+    casts: Cast[];
 }

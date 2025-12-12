@@ -2,12 +2,12 @@ import { BaseDto } from "src/core/base/base.dto";
 import { AgeLimit, FilmStatus, FilmType } from "../const/const";
 import { GenreDto } from "./genre.dto";
 import { Expose, Type } from "class-transformer";
-import { ApiProperty, OmitType, PickType } from "@nestjs/swagger";
+import { ApiProperty, PickType } from "@nestjs/swagger";
 import { IsArray, IsDate, IsEnum, IsOptional, IsString, ValidateNested } from "class-validator";
 import { DirectorDto } from "./director.dto";
-import { ActorDto } from "./actor.dto";
 import { PosterDto } from "src/module/poster/dto/poster.dto";
-import { CreateSeasonDto, SeasonDto, UpdateSeasonDto } from "./season.dto";
+import { SeasonDto } from "./season.dto";
+import { CastDto, UpdateCastDto } from "./cast.dto";
 
 export class FilmDto extends BaseDto {
   @ApiProperty({
@@ -126,11 +126,11 @@ export class FilmDto extends BaseDto {
 
     @ApiProperty({
     description: 'Diễn viên',
-    type: [ActorDto],
+    type: [CastDto],
   })
-  @Type(() => ActorDto)
+  @Type(() => CastDto)
   @Expose()
-  actors: ActorDto[];
+  casts: CastDto[];
 
     @ApiProperty({
     description: 'Áp phích phim',
@@ -163,14 +163,15 @@ export class UpdateFilmDto extends PickType(FilmDto, ['title', 'originalTitle', 
 
     @ApiProperty({
     description: 'Diễn viên',
-    type: [String],
+    type: [UpdateCastDto],
     required: false,
     nullable: true,
   })
     @IsOptional()
+    @ValidateNested({each: true})
     @IsArray()
-    @IsString({ each: true })
-  actors?: string[];
+    @Type(() => UpdateCastDto)
+  casts?: UpdateCastDto[];
 
     @ApiProperty({
     description: 'Thể loại',
