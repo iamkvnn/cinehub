@@ -1,6 +1,5 @@
-
 export enum PosterType {
-    DEFAULT = 'default',
-    THUMBNAIL = 'thumbnail',
-    BACKDROP = 'backdrop',
-};
+  DEFAULT = 'default',
+  THUMBNAIL = 'thumbnail',
+  BACKDROP = 'backdrop',
+}

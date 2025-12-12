@@ -1,9 +1,25 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Put,
+  Query,
+} from '@nestjs/common';
 import { UserService } from '../service/user.service';
-import { createApiResponse, createPaginatedApiResponse } from 'src/common/utils';
+import {
+  createApiResponse,
+  createPaginatedApiResponse,
+} from 'src/common/utils';
 import { ApiBody, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 import { CreateUserDto, UpdateUserDto, UserDto } from '../dto/user.dto';
-import { createApiResponseDto, createPaginatedApiResponseDto, PaginatedApiQuery } from 'src/common/dto';
+import {
+  createApiResponseDto,
+  createPaginatedApiResponseDto,
+  PaginatedApiQuery,
+} from 'src/common/dto';
 import { plainToInstance } from 'class-transformer';
 
 @Controller({
@@ -41,13 +57,13 @@ export class UserController {
   async getUserById(@Param('id') id: string) {
     const user = await this.userService.findById(id);
     return createApiResponse(
-      plainToInstance(UserDto, user, { excludeExtraneousValues: true } ),
+      plainToInstance(UserDto, user, { excludeExtraneousValues: true }),
     );
   }
 
   // @Post()
   // @ApiResponse({
-  //   status: 201, 
+  //   status: 201,
   //   description: 'Create a new user',
   //   type: createApiResponseDto(UserDto),
   // })

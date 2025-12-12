@@ -16,7 +16,11 @@ export abstract class BaseDto {
   @Expose()
   updatedAt: Date;
 
-  @ApiProperty({ description: 'Soft deletion timestamp', required: false, default: null })
+  @ApiProperty({
+    description: 'Soft deletion timestamp',
+    required: false,
+    default: null,
+  })
   @Expose()
   deletedAt?: Date | null;
 }

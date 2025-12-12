@@ -1,13 +1,20 @@
-import { BaseDto } from "src/core/base/base.dto";
-import { AgeLimit, FilmStatus, FilmType } from "../const/const";
-import { GenreDto } from "./genre.dto";
-import { Expose, Type } from "class-transformer";
-import { ApiProperty, PickType } from "@nestjs/swagger";
-import { IsArray, IsDate, IsEnum, IsOptional, IsString, ValidateNested } from "class-validator";
-import { DirectorDto } from "./director.dto";
-import { PosterDto } from "src/module/poster/dto/poster.dto";
-import { SeasonDto } from "./season.dto";
-import { CastDto, UpdateCastDto } from "./cast.dto";
+import { BaseDto } from 'src/core/base/base.dto';
+import { AgeLimit, FilmStatus, FilmType } from '../const/const';
+import { GenreDto } from './genre.dto';
+import { Expose, Type } from 'class-transformer';
+import { ApiProperty, PickType } from '@nestjs/swagger';
+import {
+  IsArray,
+  IsDate,
+  IsEnum,
+  IsOptional,
+  IsString,
+  ValidateNested,
+} from 'class-validator';
+import { DirectorDto } from './director.dto';
+import { PosterDto } from 'src/module/poster/dto/poster.dto';
+import { SeasonDto } from './season.dto';
+import { CastDto, UpdateCastDto } from './cast.dto';
 
 export class FilmDto extends BaseDto {
   @ApiProperty({
@@ -26,12 +33,12 @@ export class FilmDto extends BaseDto {
   @IsString()
   originalTitle: string;
 
-    @ApiProperty({
+  @ApiProperty({
     description: 'Tiêu đề tiếng Anh',
     example: 'Inception',
-    })
-    @IsString()
-    @Expose()
+  })
+  @IsString()
+  @Expose()
   englishTitle: string;
 
   @ApiProperty({
@@ -76,36 +83,36 @@ export class FilmDto extends BaseDto {
   @Expose()
   country: string;
 
-    @ApiProperty({
+  @ApiProperty({
     description: 'Đánh giá trên IMDb',
     example: 7.8,
-    })
-    @Expose()
+  })
+  @Expose()
   imdbRating: number;
 
-    @ApiProperty({
+  @ApiProperty({
     description: 'Ngày phát hành',
     example: '2010-07-16',
-    })
-    @IsDate()
-    @Expose()
+  })
+  @IsDate()
+  @Expose()
   releaseDate: Date;
 
-    @ApiProperty({
+  @ApiProperty({
     enum: FilmStatus,
     description: 'Trạng thái phim',
     example: FilmStatus.RELEASING,
-    })
-    @Expose()
+  })
+  @Expose()
   status: FilmStatus;
 
-    @ApiProperty({
+  @ApiProperty({
     enum: FilmType,
     description: 'Loại phim',
     example: FilmType.MOVIE,
-    })
-    @IsEnum(FilmType)
-    @Expose()
+  })
+  @IsEnum(FilmType)
+  @Expose()
   type: FilmType;
 
   @ApiProperty({
@@ -116,7 +123,7 @@ export class FilmDto extends BaseDto {
   @Expose()
   genres: GenreDto[];
 
-    @ApiProperty({
+  @ApiProperty({
     description: 'Đạo diễn',
     type: [DirectorDto],
   })
@@ -124,7 +131,7 @@ export class FilmDto extends BaseDto {
   @Expose()
   directors: DirectorDto[];
 
-    @ApiProperty({
+  @ApiProperty({
     description: 'Diễn viên',
     type: [CastDto],
   })
@@ -132,7 +139,7 @@ export class FilmDto extends BaseDto {
   @Expose()
   casts: CastDto[];
 
-    @ApiProperty({
+  @ApiProperty({
     description: 'Áp phích phim',
     type: [PosterDto],
   })
@@ -140,7 +147,7 @@ export class FilmDto extends BaseDto {
   @Expose()
   posters: PosterDto[];
 
-    @ApiProperty({
+  @ApiProperty({
     description: 'Mùa phim',
     type: [SeasonDto],
   })
@@ -149,8 +156,18 @@ export class FilmDto extends BaseDto {
   seasons: SeasonDto[];
 }
 
-export class UpdateFilmDto extends PickType(FilmDto, ['title', 'originalTitle', 'englishTitle', 'description', 'ageLimit', 'country', 'releaseDate', 'status', 'type']) {
-    @ApiProperty({
+export class UpdateFilmDto extends PickType(FilmDto, [
+  'title',
+  'originalTitle',
+  'englishTitle',
+  'description',
+  'ageLimit',
+  'country',
+  'releaseDate',
+  'status',
+  'type',
+]) {
+  @ApiProperty({
     description: 'Đạo diễn',
     type: [String],
     required: false,
@@ -161,27 +178,27 @@ export class UpdateFilmDto extends PickType(FilmDto, ['title', 'originalTitle', 
   @IsString({ each: true })
   directors?: string[];
 
-    @ApiProperty({
+  @ApiProperty({
     description: 'Diễn viên',
     type: [UpdateCastDto],
     required: false,
     nullable: true,
   })
-    @IsOptional()
-    @ValidateNested({each: true})
-    @IsArray()
-    @Type(() => UpdateCastDto)
+  @IsOptional()
+  @ValidateNested({ each: true })
+  @IsArray()
+  @Type(() => UpdateCastDto)
   casts?: UpdateCastDto[];
 
-    @ApiProperty({
+  @ApiProperty({
     description: 'Thể loại',
     type: [String],
     required: false,
     nullable: true,
   })
-    @IsOptional()
-    @IsArray()
-    @IsString({ each: true })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
   genres?: string[];
 }
 

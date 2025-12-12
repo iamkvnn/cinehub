@@ -156,7 +156,11 @@ export class FilmController {
   })
   @ApiQuery({ name: 'season', required: false, type: Number })
   @ApiQuery({ name: 'episode', required: false, type: Number })
-  async deleteVideo(@Param('id') filmId: string, @Query('season') season?: number, @Query('episode') episode?: number) {
+  async deleteVideo(
+    @Param('id') filmId: string,
+    @Query('season') season?: number,
+    @Query('episode') episode?: number,
+  ) {
     await this.service.deleteVideo(filmId, season, episode);
   }
 }

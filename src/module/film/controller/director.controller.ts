@@ -1,17 +1,35 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Query } from "@nestjs/common";
-import { ApiOperation, ApiParam, ApiResponse, ApiTags } from "@nestjs/swagger";
-import { createApiResponseDto, createPaginatedApiResponseDto, PaginatedApiQuery } from "src/common/dto";
-import { DirectorDto, CreateDirectorDto, UpdateDirectorDto } from "../dto/director.dto";
-import { createApiResponse, createPaginatedApiResponse } from "src/common/utils";
-import { plainToInstance } from "class-transformer";
-import { DirectorService } from "../service/director.service";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Put,
+  Query,
+} from '@nestjs/common';
+import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  createApiResponseDto,
+  createPaginatedApiResponseDto,
+  PaginatedApiQuery,
+} from 'src/common/dto';
+import {
+  DirectorDto,
+  CreateDirectorDto,
+  UpdateDirectorDto,
+} from '../dto/director.dto';
+import {
+  createApiResponse,
+  createPaginatedApiResponse,
+} from 'src/common/utils';
+import { plainToInstance } from 'class-transformer';
+import { DirectorService } from '../service/director.service';
 
 @Controller('directors')
 @ApiTags('Directors')
 export class DirectorController {
-    constructor(
-        private readonly directorService: DirectorService,
-    ) { }
+  constructor(private readonly directorService: DirectorService) {}
 
   @Get()
   @ApiOperation({ summary: 'Lấy danh sách đạo diễn' })
@@ -41,13 +59,13 @@ export class DirectorController {
   async getDirectorById(@Param('id') id: string) {
     const Director = await this.directorService.findOne(id);
     return createApiResponse(
-      plainToInstance(DirectorDto, Director, { excludeExtraneousValues: true } ),
+      plainToInstance(DirectorDto, Director, { excludeExtraneousValues: true }),
     );
   }
 
   @Post()
   @ApiResponse({
-    status: 201, 
+    status: 201,
     description: 'Tạo đạo diễn mới',
     type: createApiResponseDto(DirectorDto),
   })
@@ -65,7 +83,10 @@ export class DirectorController {
     description: 'Cập nhật thông tin đạo diễn',
     type: createApiResponseDto(DirectorDto),
   })
-  async updateDirector(@Param('id') id: string, @Body() updateDto: UpdateDirectorDto) {
+  async updateDirector(
+    @Param('id') id: string,
+    @Body() updateDto: UpdateDirectorDto,
+  ) {
     const data = await this.directorService.update(id, updateDto);
     return createApiResponse(
       plainToInstance(DirectorDto, data, { excludeExtraneousValues: true }),
@@ -80,5 +101,5 @@ export class DirectorController {
   })
   async deleteDirector(@Param('id') id: string) {
     await this.directorService.delete(id);
-  }    
+  }
 }

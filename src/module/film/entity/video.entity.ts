@@ -30,7 +30,10 @@ export class Video extends BaseEntity {
   @ManyToOne(() => Film, (film) => film.videos, { onDelete: 'CASCADE' })
   film: Film;
 
-  @OneToOne(() => Episode, (episode) => episode.video, { onDelete: 'CASCADE', nullable: true })
+  @OneToOne(() => Episode, (episode) => episode.video, {
+    onDelete: 'CASCADE',
+    nullable: true,
+  })
   @JoinColumn({ name: 'episodeId' })
   episode: Episode;
 }

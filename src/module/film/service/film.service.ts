@@ -51,16 +51,18 @@ export class FilmService {
 
         let casts: DeepPartial<Cast>[] = [];
         if (dto.casts) {
-          const actors = await actorRepo.find({ where: {id: In(dto.casts.map(c => c.actorId ))}});
+          const actors = await actorRepo.find({
+            where: { id: In(dto.casts.map((c) => c.actorId)) },
+          });
           if (actors.length !== dto.casts.length) {
             throw new NotFoundException(ERROR_MESSAGES.NOT_FOUND);
           }
-          casts = dto.casts.map(c => ({
+          casts = dto.casts.map((c) => ({
             character: c.character,
             actor: {
-              id: c.actorId
-            }
-          }))
+              id: c.actorId,
+            },
+          }));
         }
 
         const film = filmRepo.create({
@@ -76,7 +78,6 @@ export class FilmService {
       handleDbExceptions(error);
     }
   }
-
 
   async find(query: FilmQueryDto): Promise<[Film[], number]> {
     const qb = this.filmRepo
@@ -99,9 +100,12 @@ export class FilmService {
     }
 
     if (query.search) {
-      qb.andWhere('(film.title LIKE :search OR film.originalTitle LIKE :search OR film.englishTitle LIKE :search)', {
-        search: `%${query.search}%`,
-      });
+      qb.andWhere(
+        '(film.title LIKE :search OR film.originalTitle LIKE :search OR film.englishTitle LIKE :search)',
+        {
+          search: `%${query.search}%`,
+        },
+      );
     }
 
     if (query.genreId) {
@@ -109,7 +113,9 @@ export class FilmService {
     }
 
     if (query.directorId) {
-      qb.andWhere('director.id = :directorId', { directorId: query.directorId });
+      qb.andWhere('director.id = :directorId', {
+        directorId: query.directorId,
+      });
     }
 
     if (query.actorId) {
@@ -137,7 +143,7 @@ export class FilmService {
     if (query.ageLimit) {
       qb.andWhere('film.ageLimit = :ageLimit', { ageLimit: query.ageLimit });
     }
-    
+
     const [films, count] = await qb
       .skip((query.page - 1) * query.limit)
       .take(query.limit)
@@ -147,7 +153,10 @@ export class FilmService {
   }
 
   async findOne(id: string) {
-    const film = await this.filmRepo.findOne({ where: { id }, relations: ['posters', 'genres', 'directors', 'casts', 'casts.actor'] });
+    const film = await this.filmRepo.findOne({
+      where: { id },
+      relations: ['posters', 'genres', 'directors', 'casts', 'casts.actor'],
+    });
     if (!film) throw new NotFoundException(ERROR_MESSAGES.NOT_FOUND);
     return film;
   }
@@ -177,16 +186,18 @@ export class FilmService {
 
         let casts: DeepPartial<Cast>[] = [];
         if (dto.casts) {
-          const actors = await actorRepo.find({ where: {id: In(dto.casts.map(c => c.actorId ))}});
+          const actors = await actorRepo.find({
+            where: { id: In(dto.casts.map((c) => c.actorId)) },
+          });
           if (actors.length !== dto.casts.length) {
             throw new NotFoundException(ERROR_MESSAGES.NOT_FOUND);
           }
-          casts = dto.casts.map(c => ({
+          casts = dto.casts.map((c) => ({
             character: c.character,
             actor: {
-              id: c.actorId
-            }
-          }))
+              id: c.actorId,
+            },
+          }));
         }
 
         Object.assign(film, dto, { genres, directors, casts });
@@ -201,7 +212,12 @@ export class FilmService {
     await this.filmRepo.delete(id);
   }
 
-  async uploadVideo(filmId: string, file: Express.Multer.File, season?: number, episode?: number) {
+  async uploadVideo(
+    filmId: string,
+    file: Express.Multer.File,
+    season?: number,
+    episode?: number,
+  ) {
     await this.findOne(filmId);
     await this.verifyFilmType(filmId, season, episode);
     await this.videoService.saveVideo(filmId, file, season, episode);
@@ -214,8 +230,10 @@ export class FilmService {
 
   async verifyFilmType(filmId: string, season?: number, episode?: number) {
     const film = await this.findOne(filmId);
-    if (film.type === FilmType.SERIES && (!season || !episode)
-      || film.type === FilmType.MOVIE && (season || episode)) {
+    if (
+      (film.type === FilmType.SERIES && (!season || !episode)) ||
+      (film.type === FilmType.MOVIE && (season || episode))
+    ) {
       throw new BadRequestException(ERROR_MESSAGES.INVALID_INPUT);
     }
   }

@@ -16,7 +16,7 @@ export class UserDto extends BaseDto {
   email: string;
 
   @ApiProperty({
-    enum: Gender
+    enum: Gender,
   })
   @IsEnum(Gender)
   @Expose()

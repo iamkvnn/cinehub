@@ -32,22 +32,32 @@ export class VideoService {
     @InjectRepository(Episode)
     private readonly episodeRepo: Repository<Episode>,
   ) {
-    this.outputDir = path.join(process.cwd(), this.configService.get<string>("videos.outputDir", "/tmp"));
-    this.cloudFrontDomain = this.configService.get<string>('aws.cloudfront.domain', '');
+    this.outputDir = path.join(
+      process.cwd(),
+      this.configService.get<string>('videos.outputDir', '/tmp'),
+    );
+    this.cloudFrontDomain = this.configService.get<string>(
+      'aws.cloudfront.domain',
+      '',
+    );
   }
 
-  async findOne(filmId: string, season?: number, episode?: number): Promise<Video> {
+  async findOne(
+    filmId: string,
+    season?: number,
+    episode?: number,
+  ): Promise<Video> {
     const video = await this.videoRepo.findOne({
       where: {
         filmId,
         episode: {
           number: episode,
           season: {
-            number: season
-          }
-        }
+            number: season,
+          },
+        },
       },
-      relations: { episode: { season: true } }
+      relations: { episode: { season: true } },
     });
     if (!video) {
       throw new BadRequestException(ERROR_MESSAGES.NOT_FOUND);
@@ -64,25 +74,29 @@ export class VideoService {
     let existingVideo: Video | null = null;
     try {
       existingVideo = await this.findOne(filmId, season, episode);
-    }
-    catch (err) {}
+    } catch (err) {}
     if (existingVideo) {
       throw new BadRequestException(ERROR_MESSAGES.EXISTS);
     }
-    
+
     let episodeEntity: Episode | undefined;
-    let key = `videos/${filmId}` + (season !== undefined && episode !== undefined ? `/ss${season}ep${episode}` : '');
+    let key =
+      `videos/${filmId}` +
+      (season !== undefined && episode !== undefined
+        ? `/ss${season}ep${episode}`
+        : '');
     if (season !== undefined && episode !== undefined) {
-      episodeEntity = await this.episodeRepo.findOne({
-        where: {
-          number: episode,
-          season: {
-            number: season,
-            filmId: filmId,
-          }
-        },
-        relations: { season: true }
-      }) || undefined;
+      episodeEntity =
+        (await this.episodeRepo.findOne({
+          where: {
+            number: episode,
+            season: {
+              number: season,
+              filmId: filmId,
+            },
+          },
+          relations: { season: true },
+        })) || undefined;
     }
     const video = await this.videoRepo.save({
       filmId,
@@ -106,27 +120,37 @@ export class VideoService {
       await writeFile(filePath, file.buffer);
 
       const hlsOutputDir = path.join(videoDir, 'hls');
-      const transformSuccess = await this.transformService.convertToHLS(filePath, hlsOutputDir);
-
-      if (!transformSuccess) {
-        throw new Error("Video transformation failed.");
-      }
-
-      await this.awsS3Service.uploadHLSToS3(
+      const transformSuccess = await this.transformService.convertToHLS(
+        filePath,
         hlsOutputDir,
-        video.key,
       );
 
-      const videoResolution = this.transformService.getVideoResolution(filePath);
+      if (!transformSuccess) {
+        throw new Error('Video transformation failed.');
+      }
 
-      await this.videoRepo.update({ filmId: video.filmId, episodeId: video.episode?.id }, {
-        status: VideoStatus.READY,
-        maxResolution: videoResolution.height,
-      });
+      await this.awsS3Service.uploadHLSToS3(hlsOutputDir, video.key);
+
+      const videoResolution =
+        this.transformService.getVideoResolution(filePath);
+
+      await this.videoRepo.update(
+        { filmId: video.filmId, episodeId: video.episode?.id },
+        {
+          status: VideoStatus.READY,
+          maxResolution: videoResolution.height,
+        },
+      );
       fs.rmSync(videoDir, { recursive: true, force: true });
     } catch (err) {
-      await this.deleteVideo(video.filmId, video.episode?.season?.number, video.episode?.number);
-      this.logger.error(`Failed to save video for filmId ${video.filmId} ss${video.episode?.season?.number} ep${video.episode?.number}: ${err?.message || err}`);
+      await this.deleteVideo(
+        video.filmId,
+        video.episode?.season?.number,
+        video.episode?.number,
+      );
+      this.logger.error(
+        `Failed to save video for filmId ${video.filmId} ss${video.episode?.season?.number} ep${video.episode?.number}: ${err?.message || err}`,
+      );
     }
   }
 
@@ -171,15 +195,12 @@ export class VideoService {
     }
 
     const completeFile = Buffer.concat(session.chunks.filter(Boolean));
-    const result = await this.saveVideo(
-      filmId,
-      {
-        buffer: completeFile,
-        mimetype: 'video/mp4',
-        originalname: 'uploaded.mp4',
-        size: completeFile.length,
-      } as any,
-    );
+    const result = await this.saveVideo(filmId, {
+      buffer: completeFile,
+      mimetype: 'video/mp4',
+      originalname: 'uploaded.mp4',
+      size: completeFile.length,
+    } as any);
     this.uploadCache.delete(filmId);
 
     return result;
@@ -187,7 +208,7 @@ export class VideoService {
 
   private cleanupOldSessions() {
     const oneHourAgo = Date.now() - 3600000;
-    
+
     for (const [filmId, session] of this.uploadCache.entries()) {
       if (session.createdAt < oneHourAgo) {
         this.uploadCache.delete(filmId);

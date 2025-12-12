@@ -1,22 +1,50 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseGuards } from "@nestjs/common";
-import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from "@nestjs/swagger";
-import { createApiResponseDto, createPaginatedApiResponseDto, PaginatedApiQuery } from "src/common/dto";
-import { ReviewDto, CreateReviewDto, UpdateReviewDto } from "../dto/review.dto";
-import { createApiResponse, createPaginatedApiResponse } from "src/common/utils";
-import { plainToInstance } from "class-transformer";
-import { ReviewService } from "../service/review.service";
-import { ReviewReactionService } from "../service/review-reaction.service";
-import { User } from "src/common/decorator/user.decorator";
-import { JwtAuthGuard } from "src/common/guard";
-import { CreateReviewReactionDto, ReviewReactionResponseDto, CreateReviewReportDto, ReviewReportDto } from "../dto/review-reaction.dto";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Put,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
+import {
+  createApiResponseDto,
+  createPaginatedApiResponseDto,
+  PaginatedApiQuery,
+} from 'src/common/dto';
+import { ReviewDto, CreateReviewDto, UpdateReviewDto } from '../dto/review.dto';
+import {
+  createApiResponse,
+  createPaginatedApiResponse,
+} from 'src/common/utils';
+import { plainToInstance } from 'class-transformer';
+import { ReviewService } from '../service/review.service';
+import { ReviewReactionService } from '../service/review-reaction.service';
+import { User } from 'src/common/decorator/user.decorator';
+import { JwtAuthGuard } from 'src/common/guard';
+import {
+  CreateReviewReactionDto,
+  ReviewReactionResponseDto,
+  CreateReviewReportDto,
+  ReviewReportDto,
+} from '../dto/review-reaction.dto';
 
 @Controller('reviews')
 @ApiTags('Reviews')
 export class ReviewController {
-    constructor(
-        private readonly reviewService: ReviewService,
-        private readonly reviewReactionService: ReviewReactionService,
-    ) { }
+  constructor(
+    private readonly reviewService: ReviewService,
+    private readonly reviewReactionService: ReviewReactionService,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'Lấy danh sách đánh giá' })
@@ -25,7 +53,10 @@ export class ReviewController {
     description: 'Lấy danh sách đánh giá',
     type: createPaginatedApiResponseDto(ReviewDto),
   })
-  async getAll(@Query() query: PaginatedApiQuery, @Query('filmId') filmId: string) {
+  async getAll(
+    @Query() query: PaginatedApiQuery,
+    @Query('filmId') filmId: string,
+  ) {
     const [data, count] = await this.reviewService.find(filmId, query);
     return createPaginatedApiResponse(
       plainToInstance(ReviewDto, data, { excludeExtraneousValues: true }),
@@ -37,7 +68,7 @@ export class ReviewController {
 
   @Post()
   @ApiResponse({
-    status: 201, 
+    status: 201,
     description: 'Tạo bình đánh giá mới',
     type: createApiResponseDto(ReviewDto),
   })
@@ -58,9 +89,13 @@ export class ReviewController {
     description: 'Cập nhật thông tin đánh giá',
     type: createApiResponseDto(ReviewDto),
   })
-    @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  async update(@Param('id') id: string, @Body() updateDto: UpdateReviewDto, @User() user) {
+  async update(
+    @Param('id') id: string,
+    @Body() updateDto: UpdateReviewDto,
+    @User() user,
+  ) {
     const data = await this.reviewService.update(user.id, id, updateDto);
     return createApiResponse(
       plainToInstance(ReviewDto, data, { excludeExtraneousValues: true }),
@@ -73,7 +108,7 @@ export class ReviewController {
     status: 200,
     description: 'Xóa đánh giá',
   })
-    @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   async delete(@Param('id') id: string, @User() user) {
     await this.reviewService.delete(user.id, id);
@@ -103,7 +138,12 @@ export class ReviewController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   async report(@Body() dto: CreateReviewReportDto, @User() user) {
-    const data = await this.reviewReactionService.report(user.id, dto.reviewId, dto.reason, dto.description);
+    const data = await this.reviewReactionService.report(
+      user.id,
+      dto.reviewId,
+      dto.reason,
+      dto.description,
+    );
     return createApiResponse(
       plainToInstance(ReviewReportDto, data, { excludeExtraneousValues: true }),
     );

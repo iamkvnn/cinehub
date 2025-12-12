@@ -9,11 +9,11 @@ import { ReviewReport } from './entity/review-report.entity';
 import { FilmModule } from '../film/film.module';
 import { UserModule } from '../user/user.module';
 
-@Module({  
+@Module({
   imports: [
-    TypeOrmModule.forFeature([Review, ReviewReaction, ReviewReport]), 
-    FilmModule, 
-    UserModule
+    TypeOrmModule.forFeature([Review, ReviewReaction, ReviewReport]),
+    FilmModule,
+    UserModule,
   ],
   exports: [ReviewService],
   controllers: [ReviewController],

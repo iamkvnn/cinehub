@@ -1,8 +1,8 @@
 export interface GoogleProfileDto {
-  family_name: string; 
-  picture: string; 
-  given_name: string; 
-  email: string; 
+  family_name: string;
+  picture: string;
+  given_name: string;
+  email: string;
   name: string;
 }
 

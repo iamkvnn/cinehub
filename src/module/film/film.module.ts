@@ -22,11 +22,38 @@ import { Cast } from './entity/cast';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Film, Genre, Video, Actor, Director, Season, Episode, Cast]),
+    TypeOrmModule.forFeature([
+      Film,
+      Genre,
+      Video,
+      Actor,
+      Director,
+      Season,
+      Episode,
+      Cast,
+    ]),
     MediaModule,
   ],
-  controllers: [FilmController, EpisodeController, SeasonController, DirectorController, ActorController],
-  providers: [FilmService, EpisodeService, SeasonService, DirectorService, ActorService],
-  exports: [FilmService, EpisodeService, SeasonService, DirectorService, ActorService],
+  controllers: [
+    FilmController,
+    EpisodeController,
+    SeasonController,
+    DirectorController,
+    ActorController,
+  ],
+  providers: [
+    FilmService,
+    EpisodeService,
+    SeasonService,
+    DirectorService,
+    ActorService,
+  ],
+  exports: [
+    FilmService,
+    EpisodeService,
+    SeasonService,
+    DirectorService,
+    ActorService,
+  ],
 })
 export class FilmModule {}

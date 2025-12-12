@@ -19,10 +19,8 @@ export class HealthcheckController {
   check() {
     return this.health.check([
       async () => this.db.pingCheck('database'),
-      async () =>
-        this.memory.checkHeap('memory_heap', 150 * 1024 * 1024),
-      async () =>
-        this.memory.checkRSS('memory_rss', 300 * 1024 * 1024),
+      async () => this.memory.checkHeap('memory_heap', 150 * 1024 * 1024),
+      async () => this.memory.checkRSS('memory_rss', 300 * 1024 * 1024),
     ]);
   }
 }

@@ -1,10 +1,4 @@
-import {
-  Column,
-  Entity,
-  JoinTable,
-  ManyToMany,
-  OneToMany
-} from 'typeorm';
+import { Column, Entity, JoinTable, ManyToMany, OneToMany } from 'typeorm';
 import { Genre } from './genre.entity';
 import { BaseEntity } from 'src/core/base/base.entity';
 import { Poster } from 'src/module/poster/entity/poster.entity';
@@ -95,6 +89,9 @@ export class Film extends BaseEntity {
   })
   watchHistory: WatchHistoryEntity[];
 
-  @OneToMany(() => Season, (season) => season.film, { cascade: true, orphanedRowAction: 'delete' })
+  @OneToMany(() => Season, (season) => season.film, {
+    cascade: true,
+    orphanedRowAction: 'delete',
+  })
   seasons: Season[];
 }
