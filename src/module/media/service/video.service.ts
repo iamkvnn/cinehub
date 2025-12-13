@@ -9,6 +9,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Video } from 'src/module/film/entity/video.entity';
 import { VideoStatus } from 'src/module/film/const/const';
+import { ERROR_MESSAGES } from 'src/common/const/const';
+import { Episode } from 'src/module/film/entity/episode';
 
 const writeFile = promisify(fs.writeFile);
 const unlink = promisify(fs.unlink);
@@ -27,31 +29,89 @@ export class VideoService {
     private readonly transformService: TransformService,
     @InjectRepository(Video)
     private readonly videoRepo: Repository<Video>,
+    @InjectRepository(Episode)
+    private readonly episodeRepo: Repository<Episode>,
   ) {
-    this.outputDir = path.join(process.cwd(), this.configService.get<string>("videos.outputDir", "/tmp/videos"));
-    this.cloudFrontDomain = this.configService.get<string>('aws.cloudfront.domain', '');
+    this.outputDir = path.join(
+      process.cwd(),
+      this.configService.get<string>('videos.outputDir', '/tmp'),
+    );
+    this.cloudFrontDomain = this.configService.get<string>(
+      'aws.cloudfront.domain',
+      '',
+    );
+  }
+
+  async findOne(
+    filmId: string,
+    season?: number,
+    episode?: number,
+  ): Promise<Video> {
+    const video = await this.videoRepo.findOne({
+      where: {
+        filmId,
+        episode: {
+          number: episode,
+          season: {
+            number: season,
+          },
+        },
+      },
+      relations: { episode: { season: true } },
+    });
+    if (!video) {
+      throw new BadRequestException(ERROR_MESSAGES.NOT_FOUND);
+    }
+    return video;
   }
 
   async saveVideo(
     filmId: string,
     file: Express.Multer.File,
+    season?: number,
+    episode?: number,
   ): Promise<Video> {
-    if (await this.videoRepo.findOne({ where: { filmId } })) {
-      throw new BadRequestException('Video for this film already exists');
+    let existingVideo: Video | null = null;
+    try {
+      existingVideo = await this.findOne(filmId, season, episode);
+    } catch (err) {}
+    if (existingVideo) {
+      throw new BadRequestException(ERROR_MESSAGES.EXISTS);
+    }
+
+    let episodeEntity: Episode | undefined;
+    let key =
+      `videos/${filmId}` +
+      (season !== undefined && episode !== undefined
+        ? `/ss${season}ep${episode}`
+        : '');
+    if (season !== undefined && episode !== undefined) {
+      episodeEntity =
+        (await this.episodeRepo.findOne({
+          where: {
+            number: episode,
+            season: {
+              number: season,
+              filmId: filmId,
+            },
+          },
+          relations: { season: true },
+        })) || undefined;
     }
     const video = await this.videoRepo.save({
       filmId,
-      key: `videos/${filmId}`,
-      url: `${this.cloudFrontDomain}/videos/${filmId}/master.m3u8`,
+      episode: episodeEntity,
+      key: key,
+      url: `${this.cloudFrontDomain}/${key}/master.m3u8`,
       status: VideoStatus.PROCESSING,
     });
-    this.handleVideoProcessing(filmId, file);
+    this.handleVideoProcessing(video, file);
     return video;
   }
 
-  async handleVideoProcessing(filmId: string, file: Express.Multer.File) {
+  async handleVideoProcessing(video: Video, file: Express.Multer.File) {
     try {
-      const videoDir = path.join(this.outputDir, filmId);
+      const videoDir = path.join(this.outputDir, video.key);
       if (fs.existsSync(videoDir)) {
         fs.rmSync(videoDir, { recursive: true, force: true });
       }
@@ -60,27 +120,37 @@ export class VideoService {
       await writeFile(filePath, file.buffer);
 
       const hlsOutputDir = path.join(videoDir, 'hls');
-      const transformSuccess = await this.transformService.convertToHLS(filePath, hlsOutputDir);
-
-      if (!transformSuccess) {
-        throw new Error("Video transformation failed.");
-      }
-
-      await this.awsS3Service.uploadHLSToS3(
+      const transformSuccess = await this.transformService.convertToHLS(
+        filePath,
         hlsOutputDir,
-        `videos/${filmId}`,
       );
 
-      const videoResolution = this.transformService.getVideoResolution(filePath);
+      if (!transformSuccess) {
+        throw new Error('Video transformation failed.');
+      }
 
-      await this.videoRepo.update({ filmId }, {
-        status: VideoStatus.READY,
-        maxResolution: videoResolution.width,
-      });
+      await this.awsS3Service.uploadHLSToS3(hlsOutputDir, video.key);
+
+      const videoResolution =
+        this.transformService.getVideoResolution(filePath);
+
+      await this.videoRepo.update(
+        { filmId: video.filmId, episodeId: video.episode?.id },
+        {
+          status: VideoStatus.READY,
+          maxResolution: videoResolution.height,
+        },
+      );
       fs.rmSync(videoDir, { recursive: true, force: true });
     } catch (err) {
-      await this.deleteVideo(`videos/${filmId}`);
-      this.logger.error(`Failed to save video for filmId ${filmId}: ${err?.message || err}`);
+      await this.deleteVideo(
+        video.filmId,
+        video.episode?.season?.number,
+        video.episode?.number,
+      );
+      this.logger.error(
+        `Failed to save video for filmId ${video.filmId} ss${video.episode?.season?.number} ep${video.episode?.number}: ${err?.message || err}`,
+      );
     }
   }
 
@@ -125,15 +195,12 @@ export class VideoService {
     }
 
     const completeFile = Buffer.concat(session.chunks.filter(Boolean));
-    const result = await this.saveVideo(
-      filmId,
-      {
-        buffer: completeFile,
-        mimetype: 'video/mp4',
-        originalname: 'uploaded.mp4',
-        size: completeFile.length,
-      } as any,
-    );
+    const result = await this.saveVideo(filmId, {
+      buffer: completeFile,
+      mimetype: 'video/mp4',
+      originalname: 'uploaded.mp4',
+      size: completeFile.length,
+    } as any);
     this.uploadCache.delete(filmId);
 
     return result;
@@ -141,7 +208,7 @@ export class VideoService {
 
   private cleanupOldSessions() {
     const oneHourAgo = Date.now() - 3600000;
-    
+
     for (const [filmId, session] of this.uploadCache.entries()) {
       if (session.createdAt < oneHourAgo) {
         this.uploadCache.delete(filmId);
@@ -153,11 +220,9 @@ export class VideoService {
     this.uploadCache.delete(filmId);
   }
 
-  async deleteVideo(videoKey: string) {
-    if (!await this.videoRepo.findOne({ where: { key: videoKey } })) {
-      throw new BadRequestException('Video not found');
-    }
-    this.awsS3Service.deleteHLSFromS3(videoKey);
-    await this.videoRepo.delete({ key: videoKey });
+  async deleteVideo(filmId: string, season?: number, episode?: number) {
+    const entity = await this.findOne(filmId, season, episode);
+    this.awsS3Service.deleteHLSFromS3(entity.key);
+    await this.videoRepo.remove(entity);
   }
 }

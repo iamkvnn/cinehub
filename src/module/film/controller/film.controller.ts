@@ -16,6 +16,7 @@ import {
   ApiResponse,
   ApiConsumes,
   ApiBody,
+  ApiQuery,
 } from '@nestjs/swagger';
 import { FilmService } from '../service/film.service';
 import { PaginatedApiQuery } from 'src/common/dto/paginated-query.dto';
@@ -136,11 +137,15 @@ export class FilmController {
     status: 200,
     description: 'Video được upload thành công',
   })
+  @ApiQuery({ name: 'season', required: false, type: Number })
+  @ApiQuery({ name: 'episode', required: false, type: Number })
   async uploadVideo(
     @Param('id') filmId: string,
     @UploadedFile() file: Express.Multer.File,
+    @Query('season') season?: number,
+    @Query('episode') episode?: number,
   ) {
-    await this.service.uploadVideo(filmId, file);
+    await this.service.uploadVideo(filmId, file, season, episode);
   }
 
   @Delete(':id/video')
@@ -149,7 +154,13 @@ export class FilmController {
     status: 200,
     description: 'Video được xoá thành công',
   })
-  async deleteVideo(@Param('id') filmId: string) {
-    await this.service.deleteVideo(filmId);
+  @ApiQuery({ name: 'season', required: false, type: Number })
+  @ApiQuery({ name: 'episode', required: false, type: Number })
+  async deleteVideo(
+    @Param('id') filmId: string,
+    @Query('season') season?: number,
+    @Query('episode') episode?: number,
+  ) {
+    await this.service.deleteVideo(filmId, season, episode);
   }
 }

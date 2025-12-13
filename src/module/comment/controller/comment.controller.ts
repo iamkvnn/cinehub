@@ -1,23 +1,55 @@
-import { Body, Controller, Delete, Get, Param, Post, Put, Query, UseGuards } from "@nestjs/common";
-import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from "@nestjs/swagger";
-import { createApiResponseDto, createPaginatedApiResponseDto, PaginatedApiQuery } from "src/common/dto";
-import { CommentDto, CreateCommentDto, UpdateCommentDto } from "../dto/comment.dto";
-import { createApiResponse, createPaginatedApiResponse } from "src/common/utils";
-import { plainToInstance } from "class-transformer";
-import { CommentService } from "../service/comment.service";
-import { CommentReactionService } from "../service/comment-reaction.service";
-import { User } from "src/common/decorator/user.decorator";
-import { JwtAuthGuard } from "src/common/guard";
-import { CommentQueryDto } from "../dto/comment-query.dto";
-import { CreateCommentReactionDto, CommentReactionResponseDto, CreateCommentReportDto, CommentReportDto } from "../dto/comment-reaction.dto";
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Put,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
+import {
+  createApiResponseDto,
+  createPaginatedApiResponseDto,
+  PaginatedApiQuery,
+} from 'src/common/dto';
+import {
+  CommentDto,
+  CreateCommentDto,
+  UpdateCommentDto,
+} from '../dto/comment.dto';
+import {
+  createApiResponse,
+  createPaginatedApiResponse,
+} from 'src/common/utils';
+import { plainToInstance } from 'class-transformer';
+import { CommentService } from '../service/comment.service';
+import { CommentReactionService } from '../service/comment-reaction.service';
+import { User } from 'src/common/decorator/user.decorator';
+import { JwtAuthGuard } from 'src/common/guard';
+import { CommentQueryDto } from '../dto/comment-query.dto';
+import {
+  CreateCommentReactionDto,
+  CommentReactionResponseDto,
+  CreateCommentReportDto,
+  CommentReportDto,
+} from '../dto/comment-reaction.dto';
 
 @Controller('comments')
 @ApiTags('Comments')
 export class CommentController {
-    constructor(
-        private readonly commentService: CommentService,
-        private readonly commentReactionService: CommentReactionService,
-    ) { }
+  constructor(
+    private readonly commentService: CommentService,
+    private readonly commentReactionService: CommentReactionService,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'Lấy danh sách bình luận' })
@@ -38,7 +70,7 @@ export class CommentController {
 
   @Post()
   @ApiResponse({
-    status: 201, 
+    status: 201,
     description: 'Tạo bình luận mới',
     type: createApiResponseDto(CommentDto),
   })
@@ -60,9 +92,13 @@ export class CommentController {
     description: 'Cập nhật thông tin bình luận',
     type: createApiResponseDto(CommentDto),
   })
-    @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  async update(@Param('id') id: string, @Body() updateDto: UpdateCommentDto, @User() user) {
+  async update(
+    @Param('id') id: string,
+    @Body() updateDto: UpdateCommentDto,
+    @User() user,
+  ) {
     const data = await this.commentService.update(user.id, id, updateDto);
     return createApiResponse(
       plainToInstance(CommentDto, data, { excludeExtraneousValues: true }),
@@ -75,7 +111,7 @@ export class CommentController {
     status: 200,
     description: 'Xóa bình luận',
   })
-    @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   async delete(@Param('id') id: string, @User() user) {
     await this.commentService.delete(user.id, id);
@@ -105,9 +141,16 @@ export class CommentController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   async report(@Body() dto: CreateCommentReportDto, @User() user) {
-    const data = await this.commentReactionService.report(user.id, dto.commentId, dto.reason, dto.description);
+    const data = await this.commentReactionService.report(
+      user.id,
+      dto.commentId,
+      dto.reason,
+      dto.description,
+    );
     return createApiResponse(
-      plainToInstance(CommentReportDto, data, { excludeExtraneousValues: true }),
+      plainToInstance(CommentReportDto, data, {
+        excludeExtraneousValues: true,
+      }),
     );
   }
 }

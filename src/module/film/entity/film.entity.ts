@@ -1,10 +1,4 @@
-import {
-  Column,
-  Entity,
-  JoinTable,
-  ManyToMany,
-  OneToMany
-} from 'typeorm';
+import { Column, Entity, JoinTable, ManyToMany, OneToMany } from 'typeorm';
 import { Genre } from './genre.entity';
 import { BaseEntity } from 'src/core/base/base.entity';
 import { Poster } from 'src/module/poster/entity/poster.entity';
@@ -13,8 +7,8 @@ import { WhistlesEntity } from 'src/module/whistles/entity/whistles.entity';
 import { WatchHistoryEntity } from 'src/module/watch-history/entity/watch-history.entity';
 import { AgeLimit, FilmStatus, FilmType } from '../const/const';
 import { Director } from './director';
-import { Actor } from './actor';
 import { Season } from './season';
+import { Cast } from './cast';
 
 @Entity()
 export class Film extends BaseEntity {
@@ -66,11 +60,10 @@ export class Film extends BaseEntity {
   @JoinTable()
   directors: Director[];
 
-  @ManyToMany(() => Actor, (actor) => actor.films, {
+  @OneToMany(() => Cast, (cast) => cast.film, {
     cascade: true,
   })
-  @JoinTable()
-  actors: Actor[];
+  casts: Cast[];
 
   @OneToMany(() => Poster, (poster) => poster.film, {
     cascade: true,
@@ -96,6 +89,9 @@ export class Film extends BaseEntity {
   })
   watchHistory: WatchHistoryEntity[];
 
-  @OneToMany(() => Season, (season) => season.film, { cascade: true, orphanedRowAction: 'delete' })
+  @OneToMany(() => Season, (season) => season.film, {
+    cascade: true,
+    orphanedRowAction: 'delete',
+  })
   seasons: Season[];
 }

@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
-import { DataSource, In, Repository } from 'typeorm';
+import { DataSource, DeepPartial, In, Repository } from 'typeorm';
 import { Film } from '../entity/film.entity';
 import { Genre } from '../entity/genre.entity';
 import { VideoService } from 'src/module/media/service/video.service';
@@ -14,6 +14,8 @@ import { Actor } from '../entity/actor';
 import { ERROR_MESSAGES } from 'src/common/const/const';
 import { handleDbExceptions } from 'src/common/utils/handle-db-exception';
 import { FilmQueryDto } from '../dto/film-query.dto';
+import { Cast } from '../entity/cast';
+import { FilmType } from '../const/const';
 
 @Injectable()
 export class FilmService {
@@ -47,18 +49,27 @@ export class FilmService {
           throw new NotFoundException(ERROR_MESSAGES.NOT_FOUND);
         }
 
-        const actors = dto.actors
-          ? await actorRepo.find({ where: { id: In(dto.actors) } })
-          : [];
-        if (actors.length !== (dto.actors?.length || 0)) {
-          throw new NotFoundException(ERROR_MESSAGES.NOT_FOUND);
+        let casts: DeepPartial<Cast>[] = [];
+        if (dto.casts) {
+          const actors = await actorRepo.find({
+            where: { id: In(dto.casts.map((c) => c.actorId)) },
+          });
+          if (actors.length !== dto.casts.length) {
+            throw new NotFoundException(ERROR_MESSAGES.NOT_FOUND);
+          }
+          casts = dto.casts.map((c) => ({
+            character: c.character,
+            actor: {
+              id: c.actorId,
+            },
+          }));
         }
 
         const film = filmRepo.create({
           ...dto,
           genres,
           directors,
-          actors,
+          casts,
         });
 
         return filmRepo.save(film);
@@ -68,14 +79,14 @@ export class FilmService {
     }
   }
 
-
   async find(query: FilmQueryDto): Promise<[Film[], number]> {
     const qb = this.filmRepo
       .createQueryBuilder('film')
       .leftJoinAndSelect('film.posters', 'poster')
       .leftJoinAndSelect('film.genres', 'genre')
       .leftJoinAndSelect('film.directors', 'director')
-      .leftJoinAndSelect('film.actors', 'actor');
+      .leftJoinAndSelect('film.casts', 'cast')
+      .leftJoinAndSelect('cast.actor', 'actor');
 
     if (query.sort) {
       Object.entries(query.sort).forEach(([key, value]) => {
@@ -89,9 +100,12 @@ export class FilmService {
     }
 
     if (query.search) {
-      qb.andWhere('(film.title LIKE :search OR film.originalTitle LIKE :search OR film.englishTitle LIKE :search)', {
-        search: `%${query.search}%`,
-      });
+      qb.andWhere(
+        '(film.title LIKE :search OR film.originalTitle LIKE :search OR film.englishTitle LIKE :search)',
+        {
+          search: `%${query.search}%`,
+        },
+      );
     }
 
     if (query.genreId) {
@@ -99,7 +113,9 @@ export class FilmService {
     }
 
     if (query.directorId) {
-      qb.andWhere('director.id = :directorId', { directorId: query.directorId });
+      qb.andWhere('director.id = :directorId', {
+        directorId: query.directorId,
+      });
     }
 
     if (query.actorId) {
@@ -127,7 +143,7 @@ export class FilmService {
     if (query.ageLimit) {
       qb.andWhere('film.ageLimit = :ageLimit', { ageLimit: query.ageLimit });
     }
-    
+
     const [films, count] = await qb
       .skip((query.page - 1) * query.limit)
       .take(query.limit)
@@ -137,7 +153,10 @@ export class FilmService {
   }
 
   async findOne(id: string) {
-    const film = await this.filmRepo.findOne({ where: { id }, relations: ['posters', 'genres', 'directors', 'actors'] });
+    const film = await this.filmRepo.findOne({
+      where: { id },
+      relations: ['posters', 'genres', 'directors', 'casts', 'casts.actor'],
+    });
     if (!film) throw new NotFoundException(ERROR_MESSAGES.NOT_FOUND);
     return film;
   }
@@ -164,14 +183,24 @@ export class FilmService {
         if (directors.length !== (dto.directors?.length || 0)) {
           throw new NotFoundException(ERROR_MESSAGES.NOT_FOUND);
         }
-        const actors = dto.actors
-          ? await actorRepo.find({ where: { id: In(dto.actors) } })
-          : [];
-        if (actors.length !== (dto.actors?.length || 0)) {
-          throw new NotFoundException(ERROR_MESSAGES.NOT_FOUND);
+
+        let casts: DeepPartial<Cast>[] = [];
+        if (dto.casts) {
+          const actors = await actorRepo.find({
+            where: { id: In(dto.casts.map((c) => c.actorId)) },
+          });
+          if (actors.length !== dto.casts.length) {
+            throw new NotFoundException(ERROR_MESSAGES.NOT_FOUND);
+          }
+          casts = dto.casts.map((c) => ({
+            character: c.character,
+            actor: {
+              id: c.actorId,
+            },
+          }));
         }
 
-        Object.assign(film, dto, { genres, directors, actors });
+        Object.assign(film, dto, { genres, directors, casts });
         return filmRepo.save(film);
       });
     } catch (error) {
@@ -183,11 +212,29 @@ export class FilmService {
     await this.filmRepo.delete(id);
   }
 
-  async uploadVideo(filmId: string, file: Express.Multer.File) {
-    await this.videoService.saveVideo(filmId, file);
+  async uploadVideo(
+    filmId: string,
+    file: Express.Multer.File,
+    season?: number,
+    episode?: number,
+  ) {
+    await this.findOne(filmId);
+    await this.verifyFilmType(filmId, season, episode);
+    await this.videoService.saveVideo(filmId, file, season, episode);
   }
 
-  async deleteVideo(filmId: string) {
-    await this.videoService.deleteVideo(`videos/${filmId}`);
+  async deleteVideo(filmId: string, season?: number, episode?: number) {
+    await this.verifyFilmType(filmId, season, episode);
+    await this.videoService.deleteVideo(filmId, season, episode);
+  }
+
+  async verifyFilmType(filmId: string, season?: number, episode?: number) {
+    const film = await this.findOne(filmId);
+    if (
+      (film.type === FilmType.SERIES && (!season || !episode)) ||
+      (film.type === FilmType.MOVIE && (season || episode))
+    ) {
+      throw new BadRequestException(ERROR_MESSAGES.INVALID_INPUT);
+    }
   }
 }

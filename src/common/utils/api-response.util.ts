@@ -1,4 +1,4 @@
-import { ApiResponseDto, PaginatedApiResponseDto } from "../dto";
+import { ApiResponseDto, PaginatedApiResponseDto } from '../dto';
 
 export function createApiResponse(data: any): ApiResponseDto {
   const response = new ApiResponseDto();

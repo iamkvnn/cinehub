@@ -5,9 +5,10 @@ import { AwsModule } from '../aws/aws.module';
 import { TransformService } from './service/transform.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Video } from '../film/entity/video.entity';
+import { Episode } from '../film/entity/episode';
 
 @Module({
-  imports: [AwsModule, TypeOrmModule.forFeature([Video])],
+  imports: [AwsModule, TypeOrmModule.forFeature([Video, Episode])],
   controllers: [],
   providers: [ImageService, VideoService, TransformService],
   exports: [ImageService, VideoService, TransformService],

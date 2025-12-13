@@ -1,6 +1,6 @@
-import { ApiProperty } from "@nestjs/swagger";
-import { Expose } from "class-transformer";
-import { BaseDto } from "src/core/base/base.dto";
+import { ApiProperty } from '@nestjs/swagger';
+import { Expose } from 'class-transformer';
+import { BaseDto } from 'src/core/base/base.dto';
 
 export class GenreDto extends BaseDto {
   @ApiProperty({

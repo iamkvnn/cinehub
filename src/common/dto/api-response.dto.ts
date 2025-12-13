@@ -20,9 +20,11 @@ class ApiResponseMeta {
   timestamp: string = new Date().toISOString();
   @ApiProperty({ description: 'Path of the request' })
   path: string = '';
-};
+}
 
-export const createApiResponseDto = <TModel extends Type<any>>(model: TModel) => {
+export const createApiResponseDto = <TModel extends Type<any>>(
+  model: TModel,
+) => {
   class ApiResponseDto extends ApiResponseMeta {
     @ApiProperty({ type: model, description: 'Response data' })
     declare data?: InstanceType<TModel>;
@@ -34,7 +36,9 @@ export const createApiResponseDto = <TModel extends Type<any>>(model: TModel) =>
   return ApiResponseDto;
 };
 
-export const createPaginatedApiResponseDto = <TModel extends Type<any>>(model: TModel) => {
+export const createPaginatedApiResponseDto = <TModel extends Type<any>>(
+  model: TModel,
+) => {
   class PaginatedResponseDto extends ApiResponseMeta {
     @ApiProperty({ type: [model], description: 'Response data list' })
     declare data: InstanceType<TModel>[];

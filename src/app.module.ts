@@ -18,6 +18,7 @@ import { PaymentModule } from './module/payment/payment.module';
 import { WebhookModule } from './module/webhook/webhook.module';
 import { CommentModule } from './module/comment/comment.module';
 import { ReviewModule } from './module/review/review.module';
+import { StreamModule } from './module/streaming/stream.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { ReviewModule } from './module/review/review.module';
     WebhookModule,
     CommentModule,
     ReviewModule,
+    StreamModule,
   ],
 })
 export class AppModule {}

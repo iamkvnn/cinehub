@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { UserService } from 'src/module/user/service/user.service';
 import { RegisterDto } from '../dto/register.dto';
 import {
@@ -45,10 +49,16 @@ export class AuthService {
     this.refreshSecret = jwtConfig.refresh.secret;
     this.refreshExpire = jwtConfig.refresh.expired;
     this.googleTokenUrl = this.configService.get<string>('google.tokenUrl', '');
-    this.googleUserInfoUrl = this.configService.get<string>('google.userInfoUrl', '');
+    this.googleUserInfoUrl = this.configService.get<string>(
+      'google.userInfoUrl',
+      '',
+    );
     this.googleClientId = this.configService.get<string>('google.clientId')!;
-    this.googleClientSecret = this.configService.get<string>('google.clientSecret')!;
-    this.googleRedirectUrl = this.configService.get<string>('google.redirectUrl')!;
+    this.googleClientSecret = this.configService.get<string>(
+      'google.clientSecret',
+    )!;
+    this.googleRedirectUrl =
+      this.configService.get<string>('google.redirectUrl')!;
   }
 
   async registerUser(registerUser: RegisterDto) {

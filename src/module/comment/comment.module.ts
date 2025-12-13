@@ -10,13 +10,12 @@ import { FilmModule } from '../film/film.module';
 import { UserModule } from '../user/user.module';
 import { ReviewModule } from '../review/review.module';
 
-
-@Module({  
+@Module({
   imports: [
-    TypeOrmModule.forFeature([Comment, CommentReaction, CommentReport]), 
-    FilmModule, 
-    UserModule, 
-    ReviewModule
+    TypeOrmModule.forFeature([Comment, CommentReaction, CommentReport]),
+    FilmModule,
+    UserModule,
+    ReviewModule,
   ],
   exports: [],
   controllers: [CommentController],
