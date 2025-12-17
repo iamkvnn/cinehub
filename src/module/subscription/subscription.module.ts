@@ -5,6 +5,7 @@ import { SubscriptionController } from './controller/subscription.controller';
 import { SubscriptionService } from './service/subscription.service';
 import { PlanModule } from '../plan/plan.module';
 import { UserModule } from '../user/user.module';
+import { TestSubscriptionController } from './controller/test-subscription.controller';
 
 @Module({
   imports: [
@@ -12,7 +13,7 @@ import { UserModule } from '../user/user.module';
     PlanModule,
     UserModule,
   ],
-  controllers: [SubscriptionController],
+  controllers: [SubscriptionController, TestSubscriptionController],
   providers: [SubscriptionService],
   exports: [SubscriptionService],
 })

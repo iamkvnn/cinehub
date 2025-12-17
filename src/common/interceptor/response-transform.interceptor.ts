@@ -37,7 +37,7 @@ export class ResponseTransformInterceptor<T>
               data,
               path: request.url,
               timestamp: new Date().toISOString(),
-          }
+            },
       ),
     );
   }

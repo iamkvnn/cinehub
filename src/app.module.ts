@@ -19,6 +19,7 @@ import { WebhookModule } from './module/webhook/webhook.module';
 import { CommentModule } from './module/comment/comment.module';
 import { ReviewModule } from './module/review/review.module';
 import { StreamModule } from './module/streaming/stream.module';
+import { NotificationModule } from './module/notification/notification.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { StreamModule } from './module/streaming/stream.module';
     CommentModule,
     ReviewModule,
     StreamModule,
+    NotificationModule,
   ],
 })
 export class AppModule {}
