@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, PickType } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 import { BaseDto } from 'src/core/base/base.dto';
 
@@ -10,3 +10,7 @@ export class GenreDto extends BaseDto {
   @Expose()
   name: string;
 }
+
+export class UpdateGenreDto extends PickType(GenreDto, ['name', 'id']) {}
+
+export class CreateGenreDto extends PickType(GenreDto, ['name']) {}

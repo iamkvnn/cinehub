@@ -30,7 +30,7 @@ export class StreamService {
     if (!masterContent) {
       throw new Error('HLS master file not found for video: ' + video.id);
     }
-    masterContent = this.filterMaster(masterContent, ['720', '480', '360']);
+    masterContent = this.filterMaster(masterContent, ['2160', '1440', '1080', '720', '480', '360']);
     masterContent = this.signUrls(masterContent, video);
     return masterContent;
   }

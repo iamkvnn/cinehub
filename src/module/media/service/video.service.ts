@@ -135,7 +135,7 @@ export class VideoService {
         this.transformService.getVideoResolution(filePath);
 
       await this.videoRepo.update(
-        { filmId: video.filmId, episodeId: video.episode?.id },
+        { id: video.id },
         {
           status: VideoStatus.READY,
           maxResolution: videoResolution.height,

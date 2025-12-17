@@ -7,6 +7,7 @@ import {
   Post,
   Put,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ActorService } from '../service/actor.service';
@@ -21,6 +22,9 @@ import {
   createPaginatedApiResponse,
 } from 'src/common/utils';
 import { plainToInstance } from 'class-transformer';
+import { RoleGuard } from 'src/common/guard';
+import { HasRole } from 'src/common/decorator';
+import { UserRole } from 'src/module/user/const/user.const';
 
 @Controller('actors')
 @ApiTags('Actors')
@@ -65,6 +69,8 @@ export class ActorController {
     description: 'Tạo diễn viên mới',
     type: createApiResponseDto(ActorDto),
   })
+  // @UseGuards(RoleGuard)
+  // @HasRole(UserRole.ADMIN)
   async createActor(@Body() createDto: CreateActorDto) {
     const data = await this.actorService.create(createDto);
     return createApiResponse(
@@ -79,6 +85,8 @@ export class ActorController {
     description: 'Cập nhật thông tin diễn viên',
     type: createApiResponseDto(ActorDto),
   })
+  // @UseGuards(RoleGuard)
+  // @HasRole(UserRole.ADMIN)
   async updateActor(
     @Param('id') id: string,
     @Body() updateDto: UpdateActorDto,
@@ -95,6 +103,8 @@ export class ActorController {
     status: 200,
     description: 'Xóa diễn viên',
   })
+  // @UseGuards(RoleGuard)
+  // @HasRole(UserRole.ADMIN)
   async deleteActor(@Param('id') id: string) {
     await this.actorService.delete(id);
   }

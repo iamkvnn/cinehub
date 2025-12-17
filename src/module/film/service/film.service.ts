@@ -37,19 +37,19 @@ export class FilmService {
 
         const genres = dto.genres
           ? await genreRepo.find({ where: { id: In(dto.genres) } })
-          : [];
-        if (genres.length !== (dto.genres?.length || 0)) {
+          : undefined;
+        if (genres?.length !== dto.genres?.length) {
           throw new NotFoundException(ERROR_MESSAGES.NOT_FOUND);
         }
 
         const directors = dto.directors
           ? await directorRepo.find({ where: { id: In(dto.directors) } })
-          : [];
-        if (directors.length !== (dto.directors?.length || 0)) {
+          : undefined;
+        if (directors?.length !== dto.directors?.length) {
           throw new NotFoundException(ERROR_MESSAGES.NOT_FOUND);
         }
 
-        let casts: DeepPartial<Cast>[] = [];
+        let casts: DeepPartial<Cast>[] | undefined = undefined;
         if (dto.casts) {
           const actors = await actorRepo.find({
             where: { id: In(dto.casts.map((c) => c.actorId)) },
@@ -155,7 +155,7 @@ export class FilmService {
   async findOne(id: string) {
     const film = await this.filmRepo.findOne({
       where: { id },
-      relations: ['posters', 'genres', 'directors', 'casts', 'casts.actor'],
+      relations: ['posters', 'genres', 'directors', 'casts', 'casts.actor', 'seasons'],
     });
     if (!film) throw new NotFoundException(ERROR_MESSAGES.NOT_FOUND);
     return film;
@@ -173,18 +173,18 @@ export class FilmService {
 
         const genres = dto.genres
           ? await genreRepo.find({ where: { id: In(dto.genres) } })
-          : [];
-        if (genres.length !== (dto.genres?.length || 0)) {
+          : undefined;
+        if (genres?.length !== dto.genres?.length) {
           throw new NotFoundException(ERROR_MESSAGES.NOT_FOUND);
         }
         const directors = dto.directors
           ? await directorRepo.find({ where: { id: In(dto.directors) } })
-          : [];
-        if (directors.length !== (dto.directors?.length || 0)) {
+          : undefined;
+        if (directors?.length !== dto.directors?.length) {
           throw new NotFoundException(ERROR_MESSAGES.NOT_FOUND);
         }
 
-        let casts: DeepPartial<Cast>[] = [];
+        let casts: DeepPartial<Cast>[] | undefined = undefined;
         if (dto.casts) {
           const actors = await actorRepo.find({
             where: { id: In(dto.casts.map((c) => c.actorId)) },

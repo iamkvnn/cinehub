@@ -7,6 +7,7 @@ import {
   IsArray,
   IsDate,
   IsEnum,
+  IsNumber,
   IsOptional,
   IsString,
   ValidateNested,
@@ -86,9 +87,13 @@ export class FilmDto extends BaseDto {
   @ApiProperty({
     description: 'Đánh giá trên IMDb',
     example: 7.8,
+    required: false,
+    nullable: true,
   })
+  @IsNumber({ maxDecimalPlaces: 1 })
+  @IsOptional()
   @Expose()
-  imdbRating: number;
+  imdbRating?: number;
 
   @ApiProperty({
     description: 'Ngày phát hành',
@@ -103,6 +108,7 @@ export class FilmDto extends BaseDto {
     description: 'Trạng thái phim',
     example: FilmStatus.RELEASING,
   })
+  @IsEnum(FilmStatus)
   @Expose()
   status: FilmStatus;
 
@@ -166,6 +172,7 @@ export class UpdateFilmDto extends PickType(FilmDto, [
   'releaseDate',
   'status',
   'type',
+  'imdbRating',
 ]) {
   @ApiProperty({
     description: 'Đạo diễn',

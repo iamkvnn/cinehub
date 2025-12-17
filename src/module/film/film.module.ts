@@ -19,6 +19,9 @@ import { DirectorController } from './controller/director.controller';
 import { SeasonController } from './controller/season.controller';
 import { EpisodeController } from './controller/episode.controller';
 import { Cast } from './entity/cast';
+import { GenreService } from './service/genre.service';
+import { GenreController } from './controller/genre.controller';
+import { UserModule } from '../user/user.module';
 
 @Module({
   imports: [
@@ -33,6 +36,7 @@ import { Cast } from './entity/cast';
       Cast,
     ]),
     MediaModule,
+    UserModule,
   ],
   controllers: [
     FilmController,
@@ -40,6 +44,7 @@ import { Cast } from './entity/cast';
     SeasonController,
     DirectorController,
     ActorController,
+    GenreController,
   ],
   providers: [
     FilmService,
@@ -47,6 +52,7 @@ import { Cast } from './entity/cast';
     SeasonService,
     DirectorService,
     ActorService,
+    GenreService,
   ],
   exports: [
     FilmService,
