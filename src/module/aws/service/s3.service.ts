@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import {
   S3Client,
   PutObjectCommand,
@@ -17,6 +17,7 @@ export class AwsS3Service {
   private readonly s3: S3Client;
   private readonly bucketName: string;
   private readonly region: string;
+  private readonly logger = new Logger(AwsS3Service.name);
 
   constructor(
     private readonly configService: ConfigService,
@@ -34,14 +35,23 @@ export class AwsS3Service {
   }
 
   async uploadFile(file: Express.Multer.File, key: string) {
-    const params = {
-      Bucket: this.bucketName,
-      Key: key,
-      Body: file.buffer,
-      ContentType: file.mimetype,
-    };
+    try {
+      this.logger.log(`Uploading file to S3 with key: ${key}`);
+      const params = {
+        Bucket: this.bucketName,
+        Key: key,
+        Body: file.buffer,
+        ContentType: file.mimetype,
+      };
 
-    await this.s3.send(new PutObjectCommand(params));
+      await this.s3.send(new PutObjectCommand(params));
+      this.logger.log(`File uploaded to S3 with key: ${key}`);
+    } catch (error) {
+      this.logger.error(
+        `Error uploading file to S3 with key: ${key}`,
+        (error as Error).stack,
+      );
+    }
   }
 
   async deleteFile(key: string) {
@@ -49,34 +59,53 @@ export class AwsS3Service {
       Bucket: this.bucketName,
       Key: key,
     };
-
-    await this.s3.send(new DeleteObjectCommand(params));
-    await this.cloudFrontService.invalidateCache([`/${key}`]);
+    try{
+      this.logger.log(`Deleting file from S3 with key: ${key}`);
+      await this.s3.send(new DeleteObjectCommand(params));
+      await this.cloudFrontService.invalidateCache([`/${key}`]);
+      this.logger.log(`File deleted from S3 with key: ${key}`);
+    }
+    catch(error){
+      this.logger.error(
+        `Error deleting file from S3 with key: ${key}`,
+        (error as Error).stack,
+      );
+    }
   }
 
   async uploadHLSToS3(localDir: string, remotePrefix: string) {
+    this.logger.log(`Uploading HLS files to S3 from local directory: ${localDir} to remote prefix: ${remotePrefix}`);
     if (!fs.existsSync(localDir)) {
       throw new Error('Local HLS folder not found: ' + localDir);
     }
 
-    const files = this.getAllFiles(localDir);
+    try {
+      const files = this.getAllFiles(localDir);
 
-    for (const filePath of files) {
-      const fileContent = fs.readFileSync(filePath);
+      for (const filePath of files) {
+        const fileContent = fs.readFileSync(filePath);
 
-      const relativePath = path
-        .relative(localDir, filePath)
-        .replace(/\\/g, '/');
+        const relativePath = path
+          .relative(localDir, filePath)
+          .replace(/\\/g, '/');
 
-      const key = `${remotePrefix}/${relativePath}`;
+        const key = `${remotePrefix}/${relativePath}`;
 
-      await this.s3.send(
-        new PutObjectCommand({
-          Bucket: this.bucketName,
-          Key: key,
-          Body: fileContent,
-          ContentType: this.getContentType(filePath),
-        }),
+        await this.s3.send(
+          new PutObjectCommand({
+            Bucket: this.bucketName,
+            Key: key,
+            Body: fileContent,
+            ContentType: this.getContentType(filePath),
+          }),
+        );
+        this.logger.log(`Uploaded file to S3 with key: ${key}`);
+      }
+    }
+    catch(error){
+      this.logger.error(
+        `Error uploading HLS files to S3 from local directory: ${localDir}`,
+        (error as Error).stack,
       );
     }
   }
@@ -111,6 +140,7 @@ export class AwsS3Service {
   }
 
   async deleteHLSFromS3(folder: string) {
+    this.logger.log(`Deleting HLS files from S3 in folder: ${folder}`);
     const prefix = folder.endsWith('/') ? folder : folder + '/';
     let continuationToken: string | undefined = undefined;
     let deletedTotal = 0;
@@ -143,5 +173,6 @@ export class AwsS3Service {
     if (deletedTotal > 0) {
       await this.cloudFrontService.invalidateCache([`/${prefix}*`]);
     }
+    this.logger.log(`Deleted ${deletedTotal} objects from S3 in folder: ${folder}`);
   }
 }

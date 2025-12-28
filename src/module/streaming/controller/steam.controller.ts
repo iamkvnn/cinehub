@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Param,
+  Post,
   Query,
   Res,
   StreamableFile,
@@ -20,6 +21,7 @@ import { StreamingDto } from '../dto/stream.dto';
 import { JwtAuthGuard } from 'src/common/guard';
 import { User } from 'src/common/decorator/user.decorator';
 import type { Response } from 'express';
+import { WatchHistoryService } from 'src/module/watch-history/service/watch-history.service';
 
 @ApiTags('Streaming')
 @Controller({
@@ -29,7 +31,10 @@ import type { Response } from 'express';
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
 export class StreamController {
-  constructor(private readonly streamService: StreamService) {}
+  constructor(
+    private readonly streamService: StreamService,
+    private readonly watchHistoryService: WatchHistoryService,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'Lấy URL streaming của phim' })
@@ -67,37 +72,24 @@ export class StreamController {
     res.send(content);
   }
 
-  // @Get('authorize')
-  // @UseGuards(JwtAuthGuard)
-  // async authorizeStreaming(
-  //   @Param('filmId') filmId: string,
-  //   @User() user: any,
-  //   @Res() res: Response,
-  //   @Query('season') season?: number,
-  //   @Query('episode') episode?: number,
-  // ) {
-  //   const cookies = this.streamService.authorizeVideoAccess(
-  //     user.id,
-  //     filmId,
-  //     season,
-  //     episode,
-  //   );
-
-  //   Object.entries(cookies).forEach(([name, value]) => {
-  //     res.cookie(name, value, {
-  //       httpOnly: true,
-  //       secure: true,
-  //       sameSite: 'none',
-  //       maxAge: 3600000,
-  //       domain: process.env.FRONTEND_URL,
-  //     });
-  //   });
-
-  //   return res.json({
-  //     success: true,
-  //     manifestUrl: `https://${process.env.CLOUDFRONT_DOMAIN}/videos/${videoId}/master.m3u8`,
-  //     expiresIn: 3600,
-  //     allowedResolutions: video.sources.map(s => s.resolution),
-  //   });
-  // }
+  @Post('heartbeat')
+  @ApiOperation({ summary: 'Gửi tín hiệu heartbeat khi streaming' })
+  @ApiResponse({
+    status: 204,
+    description: 'Gửi tín hiệu heartbeat khi streaming',
+  })
+  async heartbeat(
+    @User() user: any,
+    @Query('filmId') filmId: string,
+    @Query('season') season?: number,
+    @Query('episode') episode?: number,
+  ) {
+    await this.watchHistoryService.recordHeartbeat(
+      user.id,
+      filmId,
+      season,
+      episode,
+    );
+    return;
+  }
 }

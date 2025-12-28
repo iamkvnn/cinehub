@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { CloudFrontService } from 'src/module/aws/service/cloudfront.service';
 import { FilmService } from 'src/module/film/service/film.service';
 import { VideoService } from 'src/module/media/service/video.service';
-import { StreamingDto } from '../dto/stream.dto';
 import { UserService } from 'src/module/user/service/user.service';
 import { Video } from 'src/module/film/entity/video.entity';
 import { AwsS3Service } from 'src/module/aws/service/s3.service';
