@@ -1,6 +1,7 @@
 import { BaseDto } from 'src/core/base/base.dto';
 import { ApiProperty } from '@nestjs/swagger';
-import { Expose } from 'class-transformer';
+import { Expose, Type } from 'class-transformer';
+import { FilmDto } from 'src/module/film/dto/film.dto';
 
 export class WatchHistoryDto extends BaseDto {
   @ApiProperty({
@@ -9,6 +10,14 @@ export class WatchHistoryDto extends BaseDto {
   })
   @Expose()
   filmId: string;
+
+  @ApiProperty({
+    description: 'Thông tin phim',
+    type: FilmDto,
+  })
+  @Expose()
+  @Type(() => FilmDto)
+  film: FilmDto;
 
   @ApiProperty({
     description: 'Thời lượng đã xem (tính bằng giây)',

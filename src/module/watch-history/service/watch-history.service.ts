@@ -51,11 +51,16 @@ export class WatchHistoryService {
 
   async getUserWatchHistory(
     userId: string,
+    page: number = 1,
+    limit: number = 10,
   ): Promise<[WatchHistoryEntity[], number]> {
     const user = await this.userService.findById(userId);
     return await this.watchHistoryRepository.findAndCount({
-      where: { user: user},
-      relations: ['film', 'user'],
+      where: { userId },
+      relations: ['film', 'film.posters', 'user'],
+      skip: (page - 1) * limit,
+      take: limit,
+      order: { createdAt: 'DESC' },
     });
   }
 

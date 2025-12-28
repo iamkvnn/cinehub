@@ -45,9 +45,15 @@ export class WatchHistoryController {
     type: createPaginatedApiResponseDto(WatchHistoryDto),
   })
   async getUserWatchHistory(@User() user: any, @Query() query: PaginatedApiQuery) {
-    const [data, total] = await this.watchHistoryService.getUserWatchHistory(user.id);
+    const [data, total] = await this.watchHistoryService.getUserWatchHistory(
+      user.id,
+      query.page,
+      query.limit,
+    );
     return createPaginatedApiResponse(
-      plainToInstance(WatchHistoryDto, data),
+      plainToInstance(WatchHistoryDto, data, {
+        excludeExtraneousValues: true,
+      }),
       total,
       query.page,
       query.limit,
