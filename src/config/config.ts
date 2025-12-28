@@ -11,11 +11,11 @@ export default () => ({
   jwt: {
     access: {
       secret: process.env.JWT_ACCESS_SECRET || '',
-      expired: process.env.JWT_ACCESS_EXPIRED || '3600',
+      expired: process.env.JWT_ACCESS_EXPIRED || '1h',
     },
     refresh: {
       secret: process.env.JWT_REFRESH_SECRET || '',
-      expired: process.env.JWT_REFRESH_EXPRIED || '86400',
+      expired: process.env.JWT_REFRESH_EXPRIED || '7d',
     },
   },
   google: {

@@ -4,7 +4,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { UserService } from 'src/module/user/service/user.service';
-import { RegisterDto } from '../dto/register.dto';
+import { RegisterDto, VerifyEmailDto } from '../dto/register.dto';
 import {
   comparePassword,
   generateOtp,
@@ -17,14 +17,15 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { GoogleProfileDto, GoogleTokenResponse } from '../dto/google.dto';
 import { UserEntity } from 'src/module/user/entity/user.entity';
-import { StripeService } from 'src/module/stripe/stripe.service';
 import axios from 'axios';
 import { JwtPayload } from '../dto/jwt-payload';
+import { LoginResponseDto } from '../dto/login.response.dto';
+import { ERROR_CODE } from 'src/common/const/const';
 
 @Injectable()
 export class AuthService {
+  private readonly refreshExpire: any;
   private readonly refreshSecret: string;
-  private readonly refreshExpire: number;
   private readonly googleTokenUrl: string;
   private readonly googleUserInfoUrl: string;
   private readonly googleClientId: string;
@@ -35,19 +36,9 @@ export class AuthService {
     private readonly mailService: MailService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
-    private readonly stripeService: StripeService,
   ) {
-    const jwtConfig = this.configService.get<{
-      access: { secret: string; expired: number };
-      refresh: { secret: string; expired: number };
-    }>('jwt');
-
-    if (!jwtConfig) {
-      throw new Error('JWT config missing');
-    }
-
-    this.refreshSecret = jwtConfig.refresh.secret;
-    this.refreshExpire = jwtConfig.refresh.expired;
+    this.refreshSecret = this.configService.get<string>('jwt.refresh.secret')!;
+    this.refreshExpire = this.configService.get('jwt.refresh.expired');
     this.googleTokenUrl = this.configService.get<string>('google.tokenUrl', '');
     this.googleUserInfoUrl = this.configService.get<string>(
       'google.userInfoUrl',
@@ -63,34 +54,32 @@ export class AuthService {
 
   async registerUser(registerUser: RegisterDto) {
     const user = await this.userService.createUser(registerUser);
-    const otp = generateOtp();
-    await this.mailService.sendOtpEmail(registerUser.email, otp);
-
-    const stripeCustomer = await this.stripeService.createCustomer({
-      email: user.email,
-      name: `${user.name}`,
-    });
-    await this.userService.updateUser(user.id, {
-      otp: otp,
-      stripeCustomerId: stripeCustomer.id,
-      otpExpiresAt: new Date(Date.now() + 90 * 1000),
-    });
-
+    await this.mailService.sendOtpEmail(registerUser.email, user.otp as string);
     return user;
   }
 
-  async verifyOtp(registerUser: RegisterDto) {
-    const user = await this.userService.findByEmail(registerUser.email);
+  async verifyOtp(verifyDto: VerifyEmailDto): Promise<LoginResponseDto> {
+    const user = await this.userService.findByEmail(verifyDto.email);
     if (user.isVerified) {
       throw new BadRequestException('Tài khoản đã được xác minh');
     }
-    if (user.otp !== registerUser.otp) {
+    if (user.otp !== verifyDto.code) {
       throw new BadRequestException('Mã OTP không đúng');
     }
     if (user.otpExpiresAt && user.otpExpiresAt < new Date()) {
       throw new BadRequestException('Mã OTP đã hết hạn');
     }
     await this.userService.updateUser(user.id, { isVerified: true });
+    const { accessToken, refreshToken } = this.signTokenPair(user);
+
+    await this.userService.updateUser(user.id, {
+      refreshToken: refreshToken,
+    });
+    return {
+      accessToken,
+      refreshToken,
+      user: user,
+    };
   }
 
   async resendOtp(email: string) {
@@ -129,7 +118,7 @@ export class AuthService {
     });
   }
 
-  async login(request: LoginDto) {
+  async login(request: LoginDto): Promise<LoginResponseDto> {
     const user = await this.userService.findByEmail(request.email);
     const passwordMatch: boolean = await comparePassword(
       request.password,
@@ -137,6 +126,10 @@ export class AuthService {
     );
     if (!passwordMatch) {
       throw new BadRequestException('Email hoặc mật khẩu không đúng');
+    }
+    if (!user.isVerified) {
+      await this.resendOtp(user.email);
+      throw new BadRequestException({ message: 'Tài khoản chưa được xác minh', code: ERROR_CODE.USER_NOT_VERIFIED });
     }
 
     const { accessToken, refreshToken } = this.signTokenPair(user);
@@ -161,51 +154,36 @@ export class AuthService {
     return { accessToken, refreshToken };
   }
 
-  // async refreshToken(
-  //   userId: string,
-  //   token: string,
-  // ): Promise<{ accessToken: string; refreshToken: string }> {
-  //   const user = await this.userService.findById(userId);
+  async refreshToken(
+    token: string,
+  ): Promise<LoginResponseDto> {
+    try {
+      this.jwtService.verify(token, {
+        secret: this.refreshSecret,
+      });
+    } catch (e: any) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
 
-  //   if (!user || !user.refreshToken) {
-  //     throw new UnauthorizedException('Token không hợp lệ');
-  //   }
+    const decoded = this.jwtService.decode(token) as JwtPayload;
+    const user = await this.userService.findById(decoded.sub);
 
-  //   const decoded = await this.jwtService.verifyAsync(token, {
-  //     secret: this.refreshSecret,
-  //   });
+    if (user.refreshToken !== token) {
+      throw new UnauthorizedException('Refresh token does not match');
+    }
 
-  //   if (!decoded) {
-  //     throw new UnauthorizedException('Token không hợp lệ');
-  //   }
+    const { accessToken, refreshToken } = this.signTokenPair(user);
 
-  //   const match = await bcrypt.compare(token, user.refreshToken);
+    await this.userService.updateUser(user.id, {
+      refreshToken: refreshToken,
+    });
 
-  //   if (!match) {
-  //     throw new UnauthorizedException('Token không khớp');
-  //   }
-
-  //   const payload: JwtPayload = { sub: user.id, email: user.email };
-
-  //   const accessToken = await this.jwtService.signAsync(payload, {
-  //     secret: this.accessSecret,
-  //     expiresIn: this.accessExpire,
-  //   });
-
-  //   const refreshToken = await this.jwtService.signAsync(payload, {
-  //     secret: this.refreshSecret,
-  //     expiresIn: this.refreshExpire,
-  //   });
-
-  //   await this.userService.updateUser(user.id, {
-  //     refreshToken: newRefresh,
-  //   });
-
-  //   return {
-  //     accessToken: newAccess,
-  //     refreshToken: newRefresh,
-  //   };
-  // }
+    return {
+      accessToken,
+      refreshToken,
+      user: user,
+    };
+  }
 
   async exchangeCodeForToken(
     code: string,

@@ -7,14 +7,12 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { PassportModule } from '@nestjs/passport';
 import { JwtStrategy } from './service/jwt.strategy';
-import { StripeModule } from '../stripe/stripe.module';
 
 @Module({
   imports: [
     ConfigModule,
     UserModule,
     MailModule,
-    StripeModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
@@ -22,7 +20,7 @@ import { StripeModule } from '../stripe/stripe.module';
       useFactory: (configService: ConfigService) => ({
         secret: configService.get<string>('jwt.access.secret'),
         signOptions: {
-          expiresIn: configService.get<number>('jwt.access.expired'),
+          expiresIn: configService.get('jwt.access.expired'),
         },
       }),
     }),

@@ -8,14 +8,16 @@ import { UserEntity } from '../entity/user.entity';
 import { Repository } from 'typeorm';
 import { PaginatedApiQuery } from 'src/common/dto/paginated-query.dto';
 import { CreateUserDto } from '../dto/user.dto';
-import { hashPasswordSync } from 'src/common/utils';
+import { generateOtp, hashPasswordSync } from 'src/common/utils';
 import { GoogleProfileDto } from 'src/module/auth/dto/google.dto';
+import { StripeService } from 'src/module/stripe/stripe.service';
 
 @Injectable()
 export class UserService {
   constructor(
     @InjectRepository(UserEntity)
     private readonly userRepository: Repository<UserEntity>,
+    private readonly stripeService: StripeService,
   ) {}
 
   async findAll(query: PaginatedApiQuery): Promise<[UserEntity[], number]> {
@@ -44,10 +46,17 @@ export class UserService {
     if (await this.userRepository.existsBy({ email: createDto.email })) {
       throw new BadRequestException('Email đã được sử dụng');
     }
+    const stripeCustomer = await this.stripeService.createCustomer({
+      email: createDto.email,
+      name: `${createDto.name}`,
+    });
     const user = this.userRepository.create({
       ...createDto,
       password: hashPasswordSync(createDto.password),
       isVerified: false,
+      otp: generateOtp(),
+      otpExpiresAt: new Date(Date.now() + 90 * 1000),
+      stripeCustomerId: stripeCustomer.id,
     });
     return this.userRepository.save(user);
   }

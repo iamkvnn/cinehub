@@ -1,7 +1,7 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { AuthService } from '../service/auth.service';
-import { RegisterDto } from '../dto/register.dto';
+import { RegisterDto, VerifyEmailDto } from '../dto/register.dto';
 import { createApiResponseDto } from 'src/common/dto';
 import { createApiResponse } from 'src/common/utils';
 import { UserDto } from 'src/module/user/dto/user.dto';
@@ -9,6 +9,7 @@ import { plainToInstance } from 'class-transformer';
 import { ResetPasswordDto } from '../dto/reset-password.dto';
 import { GoogleLoginDto, LoginDto } from '../dto/login.dto';
 import { LoginResponseDto } from '../dto/login.response.dto';
+import { RefreshDto } from '../dto/refresh.dto';
 @ApiTags('Auth')
 @Controller({ path: 'auth', version: '1' })
 export class AuthController {
@@ -34,9 +35,16 @@ export class AuthController {
   @ApiResponse({
     status: 200,
     description: 'Xác thực OTP thành công, tài khoản đã được kích hoạt',
+    type: createApiResponseDto(LoginResponseDto),
   })
-  async verifyOtp(@Body() dto: RegisterDto) {
-    await this.authService.verifyOtp(dto);
+  async verifyOtp(@Body() dto: VerifyEmailDto) {
+    return createApiResponse(
+      plainToInstance(
+        LoginResponseDto,
+        await this.authService.verifyOtp(dto),
+        { excludeExtraneousValues: true },
+      ),
+    );
   }
 
   @Post('resend-otp')
@@ -106,6 +114,21 @@ export class AuthController {
     return plainToInstance(
       LoginResponseDto,
       await this.authService.handleGoogleLogin(body.code, body.codeVerifier),
+      { excludeExtraneousValues: true },
+    );
+  }
+
+  @Post('refresh-token')
+  @ApiOperation({ summary: 'Làm mới JWT bằng refresh token' })
+  @ApiResponse({
+    status: 200,
+    description: 'Làm mới JWT thành công',
+    type: createApiResponseDto(LoginResponseDto),
+  })
+  async refreshToken(@Body() refreshDto: RefreshDto) {
+    return plainToInstance(
+      LoginResponseDto,
+      await this.authService.refreshToken(refreshDto.token),
       { excludeExtraneousValues: true },
     );
   }
