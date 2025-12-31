@@ -7,6 +7,9 @@ export class Genre extends BaseEntity {
   @Column({ unique: true })
   name: string;
 
+  @Column({ nullable: true })
+  slug: string;
+
   @ManyToMany(() => Film, (film) => film.genres)
   films: Film[];
 }

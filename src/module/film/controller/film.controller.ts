@@ -19,7 +19,6 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { FilmService } from '../service/film.service';
-import { PaginatedApiQuery } from 'src/common/dto/paginated-query.dto';
 import {
   createApiResponse,
   createPaginatedApiResponse,

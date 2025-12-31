@@ -1,5 +1,6 @@
 import { ApiProperty, PickType } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
+import { IsString } from 'class-validator';
 import { BaseDto } from 'src/core/base/base.dto';
 
 export class GenreDto extends BaseDto {
@@ -7,10 +8,19 @@ export class GenreDto extends BaseDto {
     description: 'The name of the genre',
     example: 'Action',
   })
+  @IsString()
   @Expose()
   name: string;
+
+  @ApiProperty({
+    description: 'The slug of the genre',
+    example: 'action',
+  })
+  @IsString()
+  @Expose()
+  slug: string;
 }
 
-export class UpdateGenreDto extends PickType(GenreDto, ['name', 'id']) {}
+export class UpdateGenreDto extends PickType(GenreDto, ['name', 'slug']) {}
 
-export class CreateGenreDto extends PickType(GenreDto, ['name']) {}
+export class CreateGenreDto extends UpdateGenreDto {}

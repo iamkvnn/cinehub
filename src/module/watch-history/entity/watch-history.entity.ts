@@ -5,13 +5,13 @@ import { Film } from 'src/module/film/entity/film.entity';
 
 @Entity('watch_history')
 export class WatchHistoryEntity extends BaseEntity {
-  @Column()
+  @Column({ type: 'varchar', length: 36 })
   userId: string;
 
   @ManyToOne(() => UserEntity, { onDelete: 'CASCADE' })
   user: UserEntity;
 
-  @Column()
+  @Column({ type: 'varchar', length: 36 })
   filmId: string;
 
   @ManyToOne(() => Film, { onDelete: 'CASCADE' })

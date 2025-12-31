@@ -21,12 +21,12 @@ export class FilmQueryDto extends PaginatedApiQuery {
   releaseYear?: number;
 
   @ApiProperty({
-    description: 'Genre ID of the film',
+    description: 'Genre name of the film',
     type: 'string',
     required: false,
   })
   @IsOptional()
-  genreId?: string;
+  genreName?: string;
 
   @ApiProperty({
     description: 'Director ID of the film',

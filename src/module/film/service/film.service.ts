@@ -108,8 +108,8 @@ export class FilmService {
       );
     }
 
-    if (query.genreId) {
-      qb.andWhere('genre.id = :genreId', { genreId: query.genreId });
+    if (query.genreName) {
+      qb.andWhere('genre.name = :genreName', { genreName: query.genreName });
     }
 
     if (query.directorId) {
