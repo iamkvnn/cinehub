@@ -23,21 +23,21 @@ import {
 import { plainToInstance } from 'class-transformer';
 
 @Controller({
-  path: 'users',
+  path: 'admins',
   version: '1',
 })
-export class UserController {
+export class AdminController {
   constructor(private readonly userService: UserService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Lấy danh sách người dùng với phân trang' })
+  @ApiOperation({ summary: 'Lấy danh sách admin với phân trang' })
   @ApiResponse({
     status: 200,
-    description: 'Lấy danh sách người dùng với phân trang',
+    description: 'Lấy danh sách admin với phân trang',
     type: createPaginatedApiResponseDto(UserDto),
   })
-  async getAllUsers(@Query() query: PaginatedApiQuery) {
-    const [users, count] = await this.userService.findAllUser(query);
+  async getAllAdmins(@Query() query: PaginatedApiQuery) {
+    const [users, count] = await this.userService.findAllAdmin(query);
     return createPaginatedApiResponse(
       plainToInstance(UserDto, users, { excludeExtraneousValues: true }),
       count,
@@ -46,29 +46,44 @@ export class UserController {
     );
   }
 
-  @ApiOperation({ summary: 'Lấy thông tin người dùng theo ID' })
+  @ApiOperation({ summary: 'Lấy thông tin admin theo ID' })
   @ApiResponse({
     status: 200,
-    description: 'Lấy thông tin người dùng theo ID',
+    description: 'Lấy thông tin admin theo ID',
     type: createApiResponseDto(UserDto),
   })
-  @ApiParam({ name: 'id', description: 'User ID' })
+  @ApiParam({ name: 'id', description: 'Admin ID' })
   @Get(':id')
-  async getUserById(@Param('id') id: string) {
+  async getAdminById(@Param('id') id: string) {
     const user = await this.userService.findById(id);
     return createApiResponse(
       plainToInstance(UserDto, user, { excludeExtraneousValues: true }),
     );
   }
 
+  @ApiOperation({ summary: 'Tạo admin mới' })
+  @ApiBody({ type: CreateUserDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Tạo admin mới',
+    type: createApiResponseDto(UserDto),
+    })
+  @Post()
+  async createAdmin(@Body() createDto: CreateUserDto) {
+    const user = await this.userService.createAdmin(createDto);
+    return createApiResponse(
+      plainToInstance(UserDto, user, { excludeExtraneousValues: true }),
+    );
+  }
+
   @Put(':id')
-  @ApiOperation({ summary: 'Cập nhật thông tin người dùng' })
+  @ApiOperation({ summary: 'Cập nhật thông tin admin' })
   @ApiResponse({
     status: 200,
-    description: 'Cập nhật thông tin người dùng',
+    description: 'Cập nhật thông tin admin',
     type: createApiResponseDto(UserDto),
   })
-  async updateUser(@Param('id') id: string, @Body() updateDto: UpdateUserDto) {
+  async updateAdmin(@Param('id') id: string, @Body() updateDto: UpdateUserDto) {
     const user = await this.userService.updateUser(id, updateDto);
     return createApiResponse(
       plainToInstance(UserDto, user, { excludeExtraneousValues: true }),
@@ -76,22 +91,22 @@ export class UserController {
   }
 
   @Put(':id/ban')
-  @ApiOperation({ summary: 'Khóa người dùng' })
+  @ApiOperation({ summary: 'Khóa admin' })
   @ApiResponse({
     status: 200,
-    description: 'Khóa người dùng',
+    description: 'Khóa admin',
   })
-  async banUser(@Param('id') id: string) {
+  async banAdmin(@Param('id') id: string) {
     await this.userService.updateUser(id, { isActive: false });
   }
 
   @Put(':id/unban')
-  @ApiOperation({ summary: 'Mở khóa người dùng' })
+  @ApiOperation({ summary: 'Mở khóa admin' })
   @ApiResponse({
     status: 200,
-    description: 'Mở khóa người dùng',
+    description: 'Mở khóa admin',
   })
-  async unbanUser(@Param('id') id: string) {
+  async unbanAdmin(@Param('id') id: string) {
     await this.userService.updateUser(id, { isActive: true });
   }
 }

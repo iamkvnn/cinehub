@@ -1,13 +1,14 @@
 import { BaseEntity } from 'src/core/base/base.entity';
-import { Entity, Column, OneToMany } from 'typeorm';
+import { Entity, Column, OneToMany, Unique } from 'typeorm';
 import { Gender, UserRole } from '../const/user.const';
 import { WhistlesEntity } from 'src/module/whistles/entity/whistles.entity';
 import { WatchHistoryEntity } from 'src/module/watch-history/entity/watch-history.entity';
 import { SubscriptionEntity } from 'src/module/subscription/entity/subscription.entity';
 
 @Entity('users')
+@Unique(['email', 'role'])
 export class UserEntity extends BaseEntity {
-  @Column({ unique: true })
+  @Column()
   email: string;
 
   @Column()
@@ -24,6 +25,9 @@ export class UserEntity extends BaseEntity {
 
   @Column({ default: false })
   isVerified: boolean;
+
+  @Column({ default: true })
+  isActive: boolean;
 
   @Column({ nullable: true })
   stripeCustomerId: string;

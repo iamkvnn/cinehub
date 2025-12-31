@@ -51,6 +51,23 @@ export class CommentController {
     private readonly commentReactionService: CommentReactionService,
   ) {}
 
+  @Get(':filmId')
+  @ApiOperation({ summary: 'Lấy danh sách bình luận' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lấy danh sách bình luận',
+    type: createPaginatedApiResponseDto(CommentDto),
+  })
+  async getAllByFilmId(@Param('filmId') filmId: string, @Query() query: CommentQueryDto) {
+    const [data, count] = await this.commentService.findByFilmId(filmId, query);
+    return createPaginatedApiResponse(
+      plainToInstance(CommentDto, data, { excludeExtraneousValues: true }),
+      count,
+      query.page,
+      query.limit,
+    );
+  }
+
   @Get()
   @ApiOperation({ summary: 'Lấy danh sách bình luận' })
   @ApiResponse({
@@ -58,7 +75,7 @@ export class CommentController {
     description: 'Lấy danh sách bình luận',
     type: createPaginatedApiResponseDto(CommentDto),
   })
-  async getAll(@Query() query: CommentQueryDto) {
+  async getAll(@Query() query: PaginatedApiQuery) {
     const [data, count] = await this.commentService.find(query);
     return createPaginatedApiResponse(
       plainToInstance(CommentDto, data, { excludeExtraneousValues: true }),

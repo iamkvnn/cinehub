@@ -34,6 +34,7 @@ export class CreateUserDto extends OmitType(UserDto, [
   'createdAt',
   'updatedAt',
   'deletedAt',
+  'role',
 ]) {
   @ApiProperty()
   @IsStrongPassword({

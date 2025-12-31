@@ -11,6 +11,7 @@ import { CreateUserDto } from '../dto/user.dto';
 import { generateOtp, hashPasswordSync } from 'src/common/utils';
 import { GoogleProfileDto } from 'src/module/auth/dto/google.dto';
 import { StripeService } from 'src/module/stripe/stripe.service';
+import { UserRole } from '../const/user.const';
 
 @Injectable()
 export class UserService {
@@ -20,8 +21,10 @@ export class UserService {
     private readonly stripeService: StripeService,
   ) {}
 
-  async findAll(query: PaginatedApiQuery): Promise<[UserEntity[], number]> {
-    const qb = this.userRepository.createQueryBuilder('user');
+  async findAllUser(query: PaginatedApiQuery): Promise<[UserEntity[], number]> {
+    const qb = this.userRepository
+      .createQueryBuilder('user')
+      .andWhere('user.role = :role', { role: UserRole.USER });
 
     if (query.sort) {
       Object.entries(query.sort).forEach(([key, value]) => {
@@ -34,6 +37,42 @@ export class UserService {
       });
     }
 
+    if (query.search) {
+      qb.andWhere('(user.name LIKE :search OR user.email LIKE :search)', {
+        search: `%${query.search}%`,
+      });
+    }
+
+    const [users, count] = await qb
+      .skip((query.page - 1) * query.limit)
+      .take(query.limit)
+      .getManyAndCount();
+
+    return [users, count];
+  }
+
+  async findAllAdmin(query: PaginatedApiQuery): Promise<[UserEntity[], number]> {
+    const qb = this.userRepository
+      .createQueryBuilder('user')
+      .andWhere('user.role = :role', { role: UserRole.ADMIN });
+
+    if (query.sort) {
+      Object.entries(query.sort).forEach(([key, value]) => {
+        if (value !== 'ASC' && value !== 'DESC') {
+          throw new BadRequestException(
+            `thứ tự sắp xếp không hợp lệ cho ${key}: ${value}`,
+          );
+        }
+        qb.addOrderBy(`user.${key}`, value);
+      });
+    }
+
+    if (query.search) {
+      qb.andWhere('(user.name LIKE :search OR user.email LIKE :search)', {
+        search: `%${query.search}%`,
+      });
+    }
+
     const [users, count] = await qb
       .skip((query.page - 1) * query.limit)
       .take(query.limit)
@@ -43,7 +82,7 @@ export class UserService {
   }
 
   async createUser(createDto: CreateUserDto): Promise<UserEntity> {
-    if (await this.userRepository.existsBy({ email: createDto.email })) {
+    if (await this.userRepository.existsBy({ email: createDto.email, role: UserRole.USER })) {
       throw new BadRequestException('Email đã được sử dụng');
     }
     const stripeCustomer = await this.stripeService.createCustomer({
@@ -57,8 +96,21 @@ export class UserService {
       otp: generateOtp(),
       otpExpiresAt: new Date(Date.now() + 90 * 1000),
       stripeCustomerId: stripeCustomer.id,
+      role: UserRole.USER,
     });
     return this.userRepository.save(user);
+  }
+
+  async createAdmin(createDto: CreateUserDto): Promise<UserEntity> {
+    if (await this.userRepository.existsBy({ email: createDto.email, role: UserRole.ADMIN })) {
+      throw new BadRequestException('Email đã được sử dụng');
+    }
+    return this.userRepository.save({
+      ...createDto,
+      password: hashPasswordSync(createDto.password),
+      isVerified: true,
+      role: UserRole.ADMIN,
+    });
   }
 
   async updateUser(
@@ -77,6 +129,7 @@ export class UserService {
     }
     return user;
   }
+
   async findOrCreateByGoogleProfile(
     profile: GoogleProfileDto,
   ): Promise<UserEntity> {
@@ -96,6 +149,7 @@ export class UserService {
 
     return user;
   }
+
   async findById(id: string): Promise<UserEntity> {
     const user = await this.userRepository.findOne({ where: { id } });
     if (!user) {
@@ -104,8 +158,11 @@ export class UserService {
     return user;
   }
 
-  async deleteUser(id: string): Promise<void> {
+  async deleteAdmin(id: string): Promise<void> {
     const user = await this.findById(id);
-    await this.userRepository.softDelete(user.id);
+    if (user.role === UserRole.USER) {
+      throw new BadRequestException('Không thể xóa người dùng thường bằng phương thức này');
+    }
+    await this.userRepository.remove(user);
   }
 }

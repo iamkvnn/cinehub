@@ -9,6 +9,7 @@ import { EpisodeService } from 'src/module/film/service/episode.service';
 import { ERROR_MESSAGES } from 'src/common/const/const';
 import { CommentQueryDto } from '../dto/comment-query.dto';
 import { ReviewService } from 'src/module/review/service/review.service';
+import { PaginatedApiQuery } from 'src/common/dto';
 
 @Injectable()
 export class CommentService {
@@ -21,9 +22,18 @@ export class CommentService {
     private readonly reviewService: ReviewService,
   ) {}
 
-  async find(query: CommentQueryDto): Promise<[Comment[], number]> {
+  async find(query: PaginatedApiQuery): Promise<[Comment[], number]> {
+    return await this.repository.findAndCount({
+      where: {},
+      relations: ['author', 'replies'],
+      skip: (query.page - 1) * query.limit,
+      take: query.limit,
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async findByFilmId(filmId: string, query: CommentQueryDto): Promise<[Comment[], number]> {
     const where: FindOptionsWhere<Comment> = {
-      filmId: query.filmId,
       reviewId: query.reviewId,
       parentId: query.parentId || IsNull(),
     };

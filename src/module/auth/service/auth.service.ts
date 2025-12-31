@@ -21,6 +21,7 @@ import axios from 'axios';
 import { JwtPayload } from '../dto/jwt-payload';
 import { LoginResponseDto } from '../dto/login.response.dto';
 import { ERROR_CODE } from 'src/common/const/const';
+import { ChangePassDto } from '../dto/change-pass.dto';
 
 @Injectable()
 export class AuthService {
@@ -118,6 +119,20 @@ export class AuthService {
     });
   }
 
+  async changePassword(userId: string, dto: ChangePassDto) {
+    const user = await this.userService.findById(userId);
+    const passwordMatch: boolean = await comparePassword(
+      dto.oldPassword,
+      user.password,
+    );
+    if (!passwordMatch) {
+      throw new BadRequestException('Mật khẩu cũ không đúng');
+    }
+    await this.userService.updateUser(user.id, {
+      password: hashPasswordSync(dto.newPassword),
+    });
+  }
+
   async login(request: LoginDto): Promise<LoginResponseDto> {
     const user = await this.userService.findByEmail(request.email);
     const passwordMatch: boolean = await comparePassword(
@@ -130,6 +145,10 @@ export class AuthService {
     if (!user.isVerified) {
       await this.resendOtp(user.email);
       throw new BadRequestException({ message: 'Tài khoản chưa được xác minh', code: ERROR_CODE.USER_NOT_VERIFIED });
+    }
+
+    if (!user.isActive) {
+      throw new UnauthorizedException('Tài khoản đã bị khóa');
     }
 
     const { accessToken, refreshToken } = this.signTokenPair(user);
@@ -237,6 +256,10 @@ export class AuthService {
 
     const user: UserEntity =
       await this.userService.findOrCreateByGoogleProfile(userInfo);
+
+    if (!user.isActive) {
+      throw new UnauthorizedException('Tài khoản đã bị khóa');
+    }
 
     return {
       ...this.signTokenPair(user),

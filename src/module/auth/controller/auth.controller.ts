@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Post, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { AuthService } from '../service/auth.service';
 import { RegisterDto, VerifyEmailDto } from '../dto/register.dto';
@@ -10,6 +10,9 @@ import { ResetPasswordDto } from '../dto/reset-password.dto';
 import { GoogleLoginDto, LoginDto } from '../dto/login.dto';
 import { LoginResponseDto } from '../dto/login.response.dto';
 import { RefreshDto } from '../dto/refresh.dto';
+import { ChangePassDto } from '../dto/change-pass.dto';
+import { User } from 'src/common/decorator';
+import { JwtAuthGuard } from 'src/common/guard';
 @ApiTags('Auth')
 @Controller({ path: 'auth', version: '1' })
 export class AuthController {
@@ -86,6 +89,17 @@ export class AuthController {
   })
   async resetPassword(@Body() dto: ResetPasswordDto) {
     await this.authService.resetPassword(dto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('change-password')
+  @ApiOperation({ summary: 'Đổi mật khẩu' })
+  @ApiResponse({
+    status: 200,
+    description: 'Đổi mật khẩu thành công',
+  })
+  async changePassword(@Body() dto: ChangePassDto, @User() user) {
+    await this.authService.changePassword(user.id, dto);
   }
 
   @Post('login')

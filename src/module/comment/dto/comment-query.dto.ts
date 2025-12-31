@@ -3,13 +3,6 @@ import { IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class CommentQueryDto {
   @ApiProperty({
-    description: 'ID phim',
-    example: 'film12345',
-  })
-  @IsString()
-  filmId: string;
-
-  @ApiProperty({
     description: 'tập phim',
     example: '1',
     required: false,
