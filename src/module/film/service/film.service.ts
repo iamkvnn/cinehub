@@ -228,6 +228,10 @@ export class FilmService {
     await this.videoService.deleteVideo(filmId, season, episode);
   }
 
+  async incrementViewCount(filmId: string): Promise<void> {
+    await this.filmRepo.increment({ id: filmId }, 'views', 1);
+  }
+
   async verifyFilmType(filmId: string, season?: number, episode?: number) {
     const film = await this.findOne(filmId);
     if (

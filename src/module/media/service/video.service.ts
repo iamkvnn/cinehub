@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, Logger } from '@nestjs/common';
+import { Injectable, BadRequestException, Logger, NotFoundException } from '@nestjs/common';
 import * as fs from 'fs';
 import * as path from 'path';
 import { promisify } from 'util';
@@ -60,7 +60,7 @@ export class VideoService {
       relations: { episode: { season: true } },
     });
     if (!video) {
-      throw new BadRequestException(ERROR_MESSAGES.NOT_FOUND);
+      throw new NotFoundException(ERROR_MESSAGES.NOT_FOUND);
     }
     return video;
   }

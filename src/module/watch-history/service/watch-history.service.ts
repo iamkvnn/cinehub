@@ -6,6 +6,7 @@ import { UserService } from 'src/module/user/service/user.service';
 import { FilmService } from 'src/module/film/service/film.service';
 import { ERROR_MESSAGES } from 'src/common/const/const';
 import { EpisodeService } from 'src/module/film/service/episode.service';
+import { HeartbeatDto } from 'src/module/streaming/dto/heartbeat.dto';
 
 @Injectable()
 export class WatchHistoryService {
@@ -20,9 +21,10 @@ export class WatchHistoryService {
   async recordHeartbeat(
     userId: string,
     filmId: string,
+    dto: HeartbeatDto,
     season?: number,
     episode?: number,
-  ): Promise<void> {
+  ): Promise<{watchId: string}> {
     const user = await this.userService.findById(userId);
     const film = await this.filmService.findOne(filmId);
     if (season !== undefined && episode !== undefined) {
@@ -35,7 +37,7 @@ export class WatchHistoryService {
     });
 
     if (!watchRecord) {
-      watchRecord = this.watchHistoryRepository.create({
+      watchRecord = await this.watchHistoryRepository.save({
         user,
         film,
         season,
@@ -43,10 +45,13 @@ export class WatchHistoryService {
       });
     }
     else {
-      watchRecord.updatedAt = new Date();
-      watchRecord.watchedDuration = (watchRecord.updatedAt.getTime() - watchRecord.createdAt.getTime()) / 1000;
+      watchRecord.lastCurrentTime = dto.currentTime;
+      await this.watchHistoryRepository.save(watchRecord);
     }
-    await this.watchHistoryRepository.save(watchRecord);
+    if (!dto.watchId) {
+      await this.filmService.incrementViewCount(filmId);
+    }
+    return {watchId: watchRecord.id};
   }
 
   async getUserWatchHistory(

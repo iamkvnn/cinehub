@@ -1,10 +1,12 @@
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { CloudFrontService } from 'src/module/aws/service/cloudfront.service';
 import { FilmService } from 'src/module/film/service/film.service';
 import { VideoService } from 'src/module/media/service/video.service';
 import { UserService } from 'src/module/user/service/user.service';
 import { Video } from 'src/module/film/entity/video.entity';
 import { AwsS3Service } from 'src/module/aws/service/s3.service';
+import { SubscriptionService } from 'src/module/subscription/service/subscription.service';
+import { PLAN_QUALITY_MAP } from '../const/const';
 
 @Injectable()
 export class StreamService {
@@ -14,6 +16,7 @@ export class StreamService {
     private readonly videoService: VideoService,
     private readonly filmService: FilmService,
     private readonly userService: UserService,
+    private readonly subscriptionService: SubscriptionService,
   ) {}
 
   async getStreamingUrl(
@@ -22,14 +25,21 @@ export class StreamService {
     season?: number,
     episode?: number,
   ): Promise<string> {
-    const user = await this.userService.findById(userId);
+    await this.userService.findById(userId);
+    const subscription =
+      await this.subscriptionService.findActiveByUserId(userId);
+    if (!subscription) {
+      throw new ForbiddenException('User does not have an active subscription');
+    }
+    const allowedQualities =
+      PLAN_QUALITY_MAP[subscription.plan.planType] || [];
     await this.filmService.verifyFilmType(filmId, season, episode);
     const video = await this.videoService.findOne(filmId, season, episode);
     let masterContent = await this.s3Service.getHLSFile(video.key);
     if (!masterContent) {
-      throw new Error('HLS master file not found for video: ' + video.id);
+      throw new NotFoundException('HLS master file not found for video: ' + video.id);
     }
-    masterContent = this.filterMaster(masterContent, ['2160', '1440', '1080', '720', '480', '360']);
+    masterContent = this.filterMaster(masterContent, allowedQualities);
     masterContent = this.signUrls(masterContent, video);
     return masterContent;
   }

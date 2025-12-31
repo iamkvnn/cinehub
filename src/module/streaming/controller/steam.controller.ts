@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   Get,
   Param,
@@ -22,6 +23,8 @@ import { JwtAuthGuard } from 'src/common/guard';
 import { User } from 'src/common/decorator/user.decorator';
 import type { Response } from 'express';
 import { WatchHistoryService } from 'src/module/watch-history/service/watch-history.service';
+import { VideoService } from 'src/module/media/service/video.service';
+import { HeartbeatDto } from '../dto/heartbeat.dto';
 
 @ApiTags('Streaming')
 @Controller({
@@ -75,21 +78,22 @@ export class StreamController {
   @Post('heartbeat')
   @ApiOperation({ summary: 'Gửi tín hiệu heartbeat khi streaming' })
   @ApiResponse({
-    status: 204,
+    status: 201,
     description: 'Gửi tín hiệu heartbeat khi streaming',
   })
   async heartbeat(
+    @Body() dto: HeartbeatDto,
     @User() user: any,
     @Query('filmId') filmId: string,
     @Query('season') season?: number,
     @Query('episode') episode?: number,
   ) {
-    await this.watchHistoryService.recordHeartbeat(
+    return await this.watchHistoryService.recordHeartbeat(
       user.id,
       filmId,
+      dto,
       season,
       episode,
     );
-    return;
   }
 }

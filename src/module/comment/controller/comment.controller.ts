@@ -78,7 +78,6 @@ export class CommentController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   async create(@Body() createDto: CreateCommentDto, @User() user) {
-    console.log('Creating comment with DTO:', createDto, 'by user:', user);
     const data = await this.commentService.create(user.id, createDto);
     return createApiResponse(
       plainToInstance(CommentDto, data, { excludeExtraneousValues: true }),

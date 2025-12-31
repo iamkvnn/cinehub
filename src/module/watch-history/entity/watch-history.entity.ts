@@ -24,5 +24,5 @@ export class WatchHistoryEntity extends BaseEntity {
   episode?: number;
 
   @Column({ type: 'int', default: 0 })
-  watchedDuration: number;
+  lastCurrentTime: number;
 }
