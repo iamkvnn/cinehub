@@ -1,6 +1,7 @@
 import { ApiProperty, PartialType, PickType } from '@nestjs/swagger';
 import { Expose, Type } from 'class-transformer';
 import {
+  IsArray,
   IsEnum,
   IsNotEmpty,
   IsObject,
@@ -11,6 +12,7 @@ import {
 import { BaseDto } from 'src/core/base/base.dto';
 import {
   NotificationStatus,
+  NotificationTargetType,
   NotificationType,
 } from '../const/notification.const';
 import { UserDto } from 'src/module/user/dto/user.dto';
@@ -42,13 +44,29 @@ export class NotificationDto extends BaseDto {
   type: NotificationType;
 
   @ApiProperty({
-    description: 'Trạng thái thông báo',
+    description: 'Loại đối tượng nhận',
+    enum: NotificationTargetType,
+    example: NotificationTargetType.SINGLE,
+  })
+  @IsEnum(NotificationTargetType)
+  @Expose()
+  targetType: NotificationTargetType;
+
+  @ApiProperty({
+    description: 'Trạng thái thông báo (từ user_notifications)',
     enum: NotificationStatus,
     example: NotificationStatus.UNREAD,
   })
   @IsEnum(NotificationStatus)
   @Expose()
   status: NotificationStatus;
+
+  @ApiProperty({
+    description: 'Thời điểm đọc thông báo',
+    required: false,
+  })
+  @Expose()
+  readAt?: Date;
 
   @ApiProperty({
     description: 'Metadata bổ sung',
@@ -61,20 +79,13 @@ export class NotificationDto extends BaseDto {
   metadata?: Record<string, any>;
 
   @ApiProperty({
-    description: 'Người nhận thông báo',
+    description: 'Người gửi thông báo',
     type: () => UserDto,
     required: false,
   })
   @Type(() => UserDto)
   @Expose()
-  user?: UserDto;
-
-  @ApiProperty({
-    description: 'Có phải là broadcast không',
-    example: false,
-  })
-  @Expose()
-  isBroadcast: boolean;
+  sender?: UserDto;
 }
 
 export class CreateNotificationDto {
@@ -127,6 +138,16 @@ export class SendNotificationDto extends CreateNotificationDto {
   @IsUUID()
   @IsOptional()
   userId?: string;
+}
+
+export class SendToUsersDto extends CreateNotificationDto {
+  @ApiProperty({
+    description: 'Danh sách ID người nhận',
+    example: ['user-uuid-1', 'user-uuid-2'],
+  })
+  @IsArray()
+  @IsUUID('4', { each: true })
+  userIds: string[];
 }
 
 export class BroadcastNotificationDto extends CreateNotificationDto {

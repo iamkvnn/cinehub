@@ -4,6 +4,7 @@ import { Gender, UserRole } from '../const/user.const';
 import { WhistlesEntity } from 'src/module/whistles/entity/whistles.entity';
 import { WatchHistoryEntity } from 'src/module/watch-history/entity/watch-history.entity';
 import { SubscriptionEntity } from 'src/module/subscription/entity/subscription.entity';
+import { UserNotificationEntity } from 'src/module/notification/entity/user-notification.entity';
 
 @Entity('users')
 @Unique(['email', 'role'])
@@ -49,4 +50,10 @@ export class UserEntity extends BaseEntity {
 
   @OneToMany(() => SubscriptionEntity, (subscription) => subscription.user)
   subscriptions: SubscriptionEntity[];
+
+  @OneToMany(
+    () => UserNotificationEntity,
+    (userNotification) => userNotification.user,
+  )
+  userNotifications: UserNotificationEntity[];
 }

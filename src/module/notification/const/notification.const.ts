@@ -5,11 +5,22 @@ export enum NotificationType {
   COMMENT_REPLY = 'COMMENT_REPLY',
   SUBSCRIPTION = 'SUBSCRIPTION',
   PAYMENT = 'PAYMENT',
+  // Admin notification types (for real-time SSE notifications)
+  INFO = 'info',
+  SUCCESS = 'success',
+  WARNING = 'warning',
+  ERROR = 'error',
 }
 
 export enum NotificationStatus {
   UNREAD = 'UNREAD',
   READ = 'READ',
+}
+
+export enum NotificationTargetType {
+  SINGLE = 'single', // Gửi đến 1 user cụ thể
+  GROUP = 'group', // Gửi đến một nhóm users
+  BROADCAST = 'broadcast', // Gửi đến tất cả users
 }
 
 export const NOTIFICATION_EVENTS = {

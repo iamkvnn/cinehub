@@ -15,7 +15,11 @@ import {
   NOTIFICATION_EVENTS,
   NOTIFICATION_ROOMS,
 } from '../const/notification.const';
-import { BroadcastNotificationDto, SendNotificationDto } from '../dto';
+import {
+  BroadcastNotificationDto,
+  CreateNotificationDto,
+  SendNotificationDto,
+} from '../dto';
 
 @WebSocketGateway({
   cors: {
@@ -92,46 +96,94 @@ export class NotificationGateway
   }
 
   /**
-   * Gửi thông báo đến một user cụ thể
+   * Gửi thông báo đến một user cụ thể (SINGLE)
    */
-  async sendToUser(userId: string, dto: SendNotificationDto) {
-    const notification = await this.notificationService.create({
-      ...dto,
+  async sendToUser(
+    userId: string,
+    dto: SendNotificationDto,
+    senderId?: string,
+  ) {
+    // Save to DB with many-to-many relationship
+    const notification = await this.notificationService.sendToUser(
       userId,
-    });
+      dto,
+      senderId,
+    );
 
+    // Emit to user's room via WebSocket
     const userRoom = NOTIFICATION_ROOMS.userRoom(userId);
-    this.server
-      .to(userRoom)
-      .emit(NOTIFICATION_EVENTS.NOTIFICATION, notification);
+    this.server.to(userRoom).emit(NOTIFICATION_EVENTS.NOTIFICATION, {
+      ...notification,
+      status: 'UNREAD',
+    });
     this.logger.log(`Sent notification to user ${userId}`);
 
     return notification;
   }
 
   /**
-   * Broadcast thông báo đến một room
+   * Gửi thông báo đến một nhóm users (GROUP)
    */
-  async broadcastToRoom(dto: BroadcastNotificationDto) {
-    const notification = await this.notificationService.createBroadcast(dto);
+  async sendToUsers(
+    userIds: string[],
+    dto: SendNotificationDto,
+    senderId?: string,
+  ) {
+    // Save to DB with many-to-many relationship
+    const notification = await this.notificationService.sendToUsers(
+      userIds,
+      dto,
+      senderId,
+    );
 
-    this.server
-      .to(dto.room)
-      .emit(NOTIFICATION_EVENTS.NOTIFICATION_BROADCAST, notification);
+    // Emit to each user's room via WebSocket
+    for (const userId of userIds) {
+      const userRoom = NOTIFICATION_ROOMS.userRoom(userId);
+      this.server.to(userRoom).emit(NOTIFICATION_EVENTS.NOTIFICATION, {
+        ...notification,
+        status: 'UNREAD',
+      });
+    }
+    this.logger.log(`Sent notification to ${userIds.length} users`);
+
+    return notification;
+  }
+
+  /**
+   * Broadcast thông báo đến một room cụ thể
+   */
+  async broadcastToRoom(dto: BroadcastNotificationDto, senderId?: string) {
+    const notification = await this.notificationService.broadcast(
+      dto,
+      senderId,
+    );
+
+    this.server.to(dto.room).emit(NOTIFICATION_EVENTS.NOTIFICATION_BROADCAST, {
+      ...notification,
+      status: 'UNREAD',
+    });
     this.logger.log(`Broadcasted notification to room: ${dto.room}`);
 
     return notification;
   }
 
   /**
-   * Broadcast thông báo đến tất cả users
+   * Broadcast thông báo đến tất cả users (BROADCAST)
    */
-  async broadcastToAll(dto: SendNotificationDto) {
-    const notification = await this.notificationService.createBroadcast(dto);
+  async broadcastToAll(dto: CreateNotificationDto, senderId?: string) {
+    // Save to DB - creates user_notifications for all users
+    const notification = await this.notificationService.broadcast(
+      dto,
+      senderId,
+    );
 
+    // Emit to all connected clients
     this.server
       .to(NOTIFICATION_ROOMS.ALL_USERS)
-      .emit(NOTIFICATION_EVENTS.NOTIFICATION_BROADCAST, notification);
+      .emit(NOTIFICATION_EVENTS.NOTIFICATION_BROADCAST, {
+        ...notification,
+        status: 'UNREAD',
+      });
     this.logger.log('Broadcasted notification to all users');
 
     return notification;

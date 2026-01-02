@@ -1,10 +1,11 @@
 import { BaseEntity } from 'src/core/base/base.entity';
 import { UserEntity } from 'src/module/user/entity/user.entity';
-import { Column, Entity, JoinColumn, ManyToOne } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 import {
-  NotificationStatus,
+  NotificationTargetType,
   NotificationType,
 } from '../const/notification.const';
+import { UserNotificationEntity } from './user-notification.entity';
 
 @Entity('notifications')
 export class NotificationEntity extends BaseEntity {
@@ -23,21 +24,24 @@ export class NotificationEntity extends BaseEntity {
 
   @Column({
     type: 'enum',
-    enum: NotificationStatus,
-    default: NotificationStatus.UNREAD,
+    enum: NotificationTargetType,
+    default: NotificationTargetType.SINGLE,
   })
-  status: NotificationStatus;
+  targetType: NotificationTargetType;
 
   @Column({ type: 'json', nullable: true })
   metadata?: Record<string, any>;
 
   @Column({ type: 'varchar', length: 36, nullable: true })
-  userId?: string;
+  senderId?: string;
 
-  @ManyToOne(() => UserEntity, { onDelete: 'CASCADE', nullable: true })
-  @JoinColumn({ name: 'userId' })
-  user?: UserEntity;
+  @ManyToOne(() => UserEntity, { onDelete: 'SET NULL', nullable: true })
+  @JoinColumn({ name: 'senderId' })
+  sender?: UserEntity;
 
-  @Column({ default: false })
-  isBroadcast: boolean;
+  @OneToMany(
+    () => UserNotificationEntity,
+    (userNotification) => userNotification.notification,
+  )
+  userNotifications: UserNotificationEntity[];
 }
