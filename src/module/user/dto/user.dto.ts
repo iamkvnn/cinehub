@@ -48,4 +48,4 @@ export class CreateUserDto extends OmitType(UserDto, [
   password: string;
 }
 
-export class UpdateUserDto extends OmitType(CreateUserDto, ['password']) {}
+export class UpdateUserDto extends OmitType(CreateUserDto, ['password', 'email']) {}
