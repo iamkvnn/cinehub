@@ -1,7 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Expose } from 'class-transformer';
+import { Expose, Type } from 'class-transformer';
 import { IsEnum, IsString, IsOptional } from 'class-validator';
 import { ReactionType, ReportReason } from 'src/module/comment/const/const';
+import { UserDto } from 'src/module/user/dto/user.dto';
 
 export class CreateReviewReactionDto {
   @ApiProperty({
@@ -17,37 +18,6 @@ export class CreateReviewReactionDto {
     example: 'review-uuid-123',
   })
   @IsString()
-  reviewId: string;
-}
-
-export class ReviewReactionDto {
-  @ApiProperty({
-    description: 'ID của reaction',
-    example: 'reaction-uuid-123',
-  })
-  @Expose()
-  id: string;
-
-  @ApiProperty({
-    description: 'Loại reaction (like/dislike)',
-    enum: ReactionType,
-    example: ReactionType.LIKE,
-  })
-  @Expose()
-  type: ReactionType;
-
-  @ApiProperty({
-    description: 'ID của user',
-    example: 'user-uuid-123',
-  })
-  @Expose()
-  userId: string;
-
-  @ApiProperty({
-    description: 'ID của review',
-    example: 'review-uuid-123',
-  })
-  @Expose()
   reviewId: string;
 }
 
@@ -126,11 +96,12 @@ export class ReviewReportDto {
   description?: string;
 
   @ApiProperty({
-    description: 'ID của user báo cáo',
-    example: 'user-uuid-123',
+    description: 'User báo cáo',
+    type: () => UserDto,
   })
+  @Type(() => UserDto)
   @Expose()
-  userId: string;
+  user: UserDto;
 
   @ApiProperty({
     description: 'ID của review bị báo cáo',

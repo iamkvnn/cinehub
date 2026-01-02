@@ -3,6 +3,7 @@ import { Expose, Transform, Type } from 'class-transformer';
 import { IsNumber, IsOptional, IsString, ValidateIf } from 'class-validator';
 import { BaseDto } from 'src/core/base/base.dto';
 import { UserDto } from 'src/module/user/dto/user.dto';
+import { ReviewReportDto } from './review-reaction.dto';
 
 export class ReviewDto extends BaseDto {
   @ApiProperty({
@@ -58,6 +59,22 @@ export class ReviewDto extends BaseDto {
   @IsString()
   @Expose()
   filmId: string;
+
+  @ApiProperty({
+    description: 'Danh sách báo cáo',
+    type: () => [ReviewReportDto],
+  })
+  @Expose()
+  @Type(() => ReviewReportDto)
+  reports: ReviewReportDto[];
+
+  @ApiProperty({
+    description: 'Đã bị báo cáo hay chưa',
+    example: true,
+  })
+  @Expose()
+  @Transform(({ obj }) => obj.reports?.length > 0)
+  isReported: boolean;
 }
 
 export class CreateReviewDto extends PickType(ReviewDto, [

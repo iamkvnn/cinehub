@@ -5,7 +5,6 @@ import { FindOptionsWhere, IsNull, Repository } from 'typeorm';
 import { CreateCommentDto, UpdateCommentDto } from '../dto/comment.dto';
 import { UserService } from 'src/module/user/service/user.service';
 import { FilmService } from 'src/module/film/service/film.service';
-import { EpisodeService } from 'src/module/film/service/episode.service';
 import { ERROR_MESSAGES } from 'src/common/const/const';
 import { CommentQueryDto } from '../dto/comment-query.dto';
 import { ReviewService } from 'src/module/review/service/review.service';
@@ -18,14 +17,13 @@ export class CommentService {
     private readonly repository: Repository<Comment>,
     private readonly userService: UserService,
     private readonly filmService: FilmService,
-    private readonly episodeService: EpisodeService,
     private readonly reviewService: ReviewService,
   ) {}
 
   async find(query: PaginatedApiQuery): Promise<[Comment[], number]> {
     return await this.repository.findAndCount({
       where: {},
-      relations: ['author', 'replies'],
+      relations: ['author', 'replies', 'reports', 'reports.user'],
       skip: (query.page - 1) * query.limit,
       take: query.limit,
       order: { createdAt: 'DESC' },
@@ -59,9 +57,7 @@ export class CommentService {
   }
 
   async create(userId: string, dto: CreateCommentDto): Promise<Comment> {
-    dto.season && dto.episode
-      ? await this.episodeService.findOne(dto.filmId, dto.season, dto.episode)
-      : await this.filmService.findOne(dto.filmId);
+    await this.filmService.findOne(dto.filmId);
     dto.parentId && (await this.findOne(dto.parentId));
     dto.reviewId && (await this.reviewService.findOne(dto.reviewId));
     const user = await this.userService.findById(userId);

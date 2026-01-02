@@ -2,6 +2,7 @@ import { BaseEntity } from 'src/core/base/base.entity';
 import { Film } from 'src/module/film/entity/film.entity';
 import { Review } from 'src/module/review/entity/review.entity';
 import { UserEntity } from 'src/module/user/entity/user.entity';
+import { CommentReport } from './comment-report.entity';
 import {
   Column,
   Entity,
@@ -21,12 +22,6 @@ export class Comment extends BaseEntity {
 
   @Column({ default: 0 })
   totalDislikes: number;
-
-  @Column({ nullable: true })
-  season?: number;
-
-  @Column({ nullable: true })
-  episode?: number;
 
   @Column({ type: 'varchar', length: 36, nullable: true })
   parentId?: string;
@@ -64,4 +59,7 @@ export class Comment extends BaseEntity {
   })
   @JoinColumn({ name: 'reviewId' })
   review: Review;
+
+  @OneToMany(() => CommentReport, (report) => report.comment)
+  reports: CommentReport[];
 }

@@ -5,7 +5,6 @@ import { Repository } from 'typeorm';
 import { CreateReviewDto, UpdateReviewDto } from '../dto/review.dto';
 import { UserService } from 'src/module/user/service/user.service';
 import { FilmService } from 'src/module/film/service/film.service';
-import { EpisodeService } from 'src/module/film/service/episode.service';
 import { ERROR_MESSAGES } from 'src/common/const/const';
 import { PaginatedApiQuery } from 'src/common/dto';
 
@@ -16,16 +15,16 @@ export class ReviewService {
     private readonly repository: Repository<Review>,
     private readonly userService: UserService,
     private readonly filmService: FilmService,
-    private readonly episodeService: EpisodeService,
   ) {}
 
   async find(
     filmId: string,
     query: PaginatedApiQuery,
   ): Promise<[Review[], number]> {
+    const where = filmId ? { filmId } : {};
     return await this.repository.findAndCount({
-      where: { filmId },
-      relations: ['author', 'comments'],
+      where,
+      relations: ['author', 'comments', 'reports', 'reports.user'],
       skip: (query.page - 1) * query.limit,
       take: query.limit,
       order: { createdAt: 'DESC' },
