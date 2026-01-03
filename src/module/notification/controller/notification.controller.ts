@@ -58,12 +58,14 @@ export class NotificationController {
     @User('id') userId: string,
     @Query() query: NotificationQueryDto,
   ) {
+    console.log('[Notification] getMyNotifications - userId:', userId);
     const [data, total] = await this.notificationService.find(userId, query);
+    console.log('[Notification] Found:', total, 'notifications');
     return createPaginatedApiResponse(
       plainToInstance(NotificationDto, data, { excludeExtraneousValues: true }),
+      total,
       query.page,
       query.limit,
-      total,
     );
   }
 
