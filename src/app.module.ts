@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { AuthModule } from './module/auth/auth.module';
 import { UserModule } from './module/user/user.module';
 import { ConfigModule } from '@nestjs/config';
@@ -26,6 +27,15 @@ import { NotificationModule } from './module/notification/notification.module';
     ConfigModule.forRoot({
       load: [config],
       isGlobal: true,
+    }),
+    EventEmitterModule.forRoot({
+      wildcard: false,
+      delimiter: '.',
+      newListener: false,
+      removeListener: false,
+      maxListeners: 10,
+      verboseMemoryLeak: true,
+      ignoreErrors: false,
     }),
     DatabaseModule,
     HealthcheckModule,

@@ -7,6 +7,7 @@ import { NotificationGateway } from './gateway/notification.gateway';
 import { NotificationController } from './controller/notification.controller';
 import { AdminNotificationController } from './controller/admin-notification.controller';
 import { AdminNotificationService } from './service/admin-notification.service';
+import { NotificationListener } from './listener/notification.listener';
 import { UserEntity } from '../user/entity/user.entity';
 
 @Module({
@@ -22,6 +23,7 @@ import { UserEntity } from '../user/entity/user.entity';
     NotificationService,
     NotificationGateway,
     AdminNotificationService,
+    NotificationListener,
   ],
   exports: [NotificationService, NotificationGateway, AdminNotificationService],
 })

@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MoreThanOrEqual, Repository } from 'typeorm';
 import { handleDbExceptions } from 'src/common/utils/handle-db-exception';
@@ -7,6 +8,8 @@ import { ERROR_MESSAGES } from 'src/common/const/const';
 import { Episode } from '../entity/episode';
 import { CreateEpisodeDto, UpdateEpisodeDto } from '../dto/episode.dto';
 import { SeasonService } from './season.service';
+import { NOTIFICATION_EVENT_NAMES } from 'src/module/notification/event';
+import { EpisodeCreatedPayload } from 'src/module/notification/dto';
 
 @Injectable()
 export class EpisodeService {
@@ -14,6 +17,7 @@ export class EpisodeService {
     @InjectRepository(Episode)
     private readonly repository: Repository<Episode>,
     private readonly seasonService: SeasonService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async find(
@@ -69,11 +73,27 @@ export class EpisodeService {
   ): Promise<Episode> {
     try {
       const seasonEntity = await this.seasonService.findOne(filmId, season);
-      return await this.repository.save({
+      const episodeNumber = (await this.countBySeasonId(seasonEntity.id)) + 1;
+
+      const savedEpisode = await this.repository.save({
         ...dto,
         seasonId: seasonEntity.id,
-        number: (await this.countBySeasonId(seasonEntity.id)) + 1,
+        number: episodeNumber,
       });
+
+      // Emit episode.created event for notification
+      this.eventEmitter.emit(NOTIFICATION_EVENT_NAMES.EPISODE_CREATED, {
+        filmId: seasonEntity.film.id,
+        filmTitle: seasonEntity.film.title,
+        seasonId: seasonEntity.id,
+        seasonNumber: seasonEntity.number,
+        episodeId: savedEpisode.id,
+        episodeNumber: savedEpisode.number,
+        episodeTitle: undefined, // Episode entity doesn't have title
+        timestamp: new Date(),
+      } as EpisodeCreatedPayload);
+
+      return savedEpisode;
     } catch (error) {
       handleDbExceptions(error);
     }

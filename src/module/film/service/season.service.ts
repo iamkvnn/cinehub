@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { InjectRepository } from '@nestjs/typeorm';
 import { MoreThanOrEqual, Repository } from 'typeorm';
 import { handleDbExceptions } from 'src/common/utils/handle-db-exception';
@@ -7,6 +8,8 @@ import { ERROR_MESSAGES } from 'src/common/const/const';
 import { Season } from '../entity/season';
 import { CreateSeasonDto, UpdateSeasonDto } from '../dto/season.dto';
 import { FilmService } from './film.service';
+import { NOTIFICATION_EVENT_NAMES } from 'src/module/notification/event';
+import { SeasonCreatedPayload } from 'src/module/notification/dto';
 
 @Injectable()
 export class SeasonService {
@@ -14,6 +17,7 @@ export class SeasonService {
     @InjectRepository(Season)
     private readonly repository: Repository<Season>,
     private readonly filmService: FilmService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async find(
@@ -46,7 +50,10 @@ export class SeasonService {
   }
 
   async findOne(filmId: string, season: number): Promise<Season> {
-    const entity = await this.repository.findOneBy({ number: season, filmId });
+    const entity = await this.repository.findOne({
+      where: { number: season, filmId },
+      relations: ['film'],
+    });
     if (!entity) {
       throw new BadRequestException(ERROR_MESSAGES.NOT_FOUND);
     }
@@ -55,12 +62,26 @@ export class SeasonService {
 
   async create(filmId: string, dto: CreateSeasonDto): Promise<Season> {
     try {
-      await this.filmService.findOne(filmId);
-      return await this.repository.save({
+      const film = await this.filmService.findOne(filmId);
+      const seasonNumber = (await this.countByFilmId(filmId)) + 1;
+
+      const savedSeason = await this.repository.save({
         ...dto,
         filmId,
-        number: (await this.countByFilmId(filmId)) + 1,
+        number: seasonNumber,
       });
+
+      // Emit season.created event for notification
+      this.eventEmitter.emit(NOTIFICATION_EVENT_NAMES.SEASON_CREATED, {
+        filmId: film.id,
+        filmTitle: film.title,
+        seasonId: savedSeason.id,
+        seasonNumber: savedSeason.number,
+        seasonTitle: undefined, // Season entity doesn't have title
+        timestamp: new Date(),
+      } as SeasonCreatedPayload);
+
+      return savedSeason;
     } catch (error) {
       handleDbExceptions(error);
     }
