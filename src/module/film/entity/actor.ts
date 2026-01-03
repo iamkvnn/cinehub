@@ -23,6 +23,9 @@ export class Actor extends BaseEntity {
   @Column({ nullable: true })
   photoUrl?: string;
 
+  @Column({ nullable: true })
+  photoKey?: string;
+
   @OneToMany(() => Cast, (cast) => cast.actor, { cascade: true })
   casts: Cast[];
 }
