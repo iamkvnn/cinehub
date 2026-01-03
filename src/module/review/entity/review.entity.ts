@@ -2,6 +2,7 @@ import { BaseEntity } from 'src/core/base/base.entity';
 import { Comment } from 'src/module/comment/entity/comment.entity';
 import { Film } from 'src/module/film/entity/film.entity';
 import { UserEntity } from 'src/module/user/entity/user.entity';
+import { ReviewReport } from './review-report.entity';
 import {
   Column,
   Entity,
@@ -44,4 +45,7 @@ export class Review extends BaseEntity {
   @ManyToOne(() => Film, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'filmId' })
   film: Film;
+
+  @OneToMany(() => ReviewReport, (report) => report.review)
+  reports: ReviewReport[];
 }

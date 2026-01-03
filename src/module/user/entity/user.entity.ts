@@ -31,6 +31,12 @@ export class UserEntity extends BaseEntity {
   isActive: boolean;
 
   @Column({ nullable: true })
+  avatarUrl: string;
+
+  @Column({ nullable: true })
+  avatarKey: string;
+
+  @Column({ nullable: true })
   stripeCustomerId: string;
 
   @Column({ nullable: true })

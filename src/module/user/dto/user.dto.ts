@@ -27,6 +27,12 @@ export class UserDto extends BaseDto {
   })
   @Expose()
   role: UserRole;
+
+  @ApiProperty({
+    required: false,
+  })
+  @Expose()
+  avatarUrl?: string;
 }
 
 export class CreateUserDto extends OmitType(UserDto, [
@@ -35,6 +41,7 @@ export class CreateUserDto extends OmitType(UserDto, [
   'updatedAt',
   'deletedAt',
   'role',
+  'avatarUrl'
 ]) {
   @ApiProperty()
   @IsStrongPassword({
@@ -48,4 +55,4 @@ export class CreateUserDto extends OmitType(UserDto, [
   password: string;
 }
 
-export class UpdateUserDto extends OmitType(CreateUserDto, ['password']) {}
+export class UpdateUserDto extends OmitType(CreateUserDto, ['password', 'email']) {}

@@ -104,42 +104,25 @@ export class FilmService {
   }
 
   async find(query: FilmQueryDto): Promise<[Film[], number]> {
-    const qb = this.filmRepo
-      .createQueryBuilder('film')
-      .leftJoinAndSelect('film.posters', 'poster')
-      .leftJoinAndSelect('film.genres', 'genre')
-      .leftJoinAndSelect('film.directors', 'director')
-      .leftJoinAndSelect('film.casts', 'cast')
-      .leftJoinAndSelect('cast.actor', 'actor');
-
-    if (query.sort) {
-      Object.entries(query.sort).forEach(([key, value]) => {
-        if (value !== 'ASC' && value !== 'DESC') {
-          throw new BadRequestException(
-            `Thứ tự sắp xếp không hợp lệ cho ${key}: ${value}`,
-          );
-        }
-        qb.addOrderBy(`film.${key}`, value);
-      });
-    }
-
+    const qb = this.filmRepo.createQueryBuilder('film')
+      .leftJoin('film.genres', 'genre')
+      .leftJoin('film.directors', 'director')
+      .leftJoin('film.casts', 'cast')
+      .leftJoin('cast.actor', 'actor')
+      .select('film.id');
     if (query.search) {
       qb.andWhere(
         '(film.title LIKE :search OR film.originalTitle LIKE :search OR film.englishTitle LIKE :search)',
-        {
-          search: `%${query.search}%`,
-        },
+        { search: `%${query.search}%` },
       );
     }
 
-    if (query.genreName) {
-      qb.andWhere('genre.name = :genreName', { genreName: query.genreName });
+    if (query.genreSlug) {
+      qb.andWhere('genre.slug = :genreSlug', { genreSlug: query.genreSlug });
     }
 
     if (query.directorId) {
-      qb.andWhere('director.id = :directorId', {
-        directorId: query.directorId,
-      });
+      qb.andWhere('director.id = :directorId', { directorId: query.directorId });
     }
 
     if (query.actorId) {
@@ -147,9 +130,7 @@ export class FilmService {
     }
 
     if (query.releaseYear) {
-      qb.andWhere('YEAR(film.releaseDate) = :releaseYear', {
-        releaseYear: query.releaseYear,
-      });
+      qb.andWhere('YEAR(film.releaseDate) = :releaseYear', { releaseYear: query.releaseYear });
     }
 
     if (query.country) {
@@ -168,12 +149,36 @@ export class FilmService {
       qb.andWhere('film.ageLimit = :ageLimit', { ageLimit: query.ageLimit });
     }
 
-    const [films, count] = await qb
+    if (query.sort) {
+      Object.entries(query.sort).forEach(([key, value]) => {
+          qb.addOrderBy(`film.${key}`, value as 'ASC' | 'DESC');
+          qb.addSelect(`film.${key}`);
+      });
+    }
+
+    const [filmsIds, count] = await qb
       .skip((query.page - 1) * query.limit)
       .take(query.limit)
       .getManyAndCount();
 
-    return [films, count];
+    if (count === 0) {
+      return [[], 0];
+    }
+
+    const ids = filmsIds.map((f) => f.id);
+
+    const films = await this.filmRepo.createQueryBuilder('film')
+      .leftJoinAndSelect('film.posters', 'poster')
+      .leftJoinAndSelect('film.genres', 'genre')
+      .leftJoinAndSelect('film.directors', 'director')
+      .leftJoinAndSelect('film.casts', 'cast')
+      .leftJoinAndSelect('cast.actor', 'actor')
+      .whereInIds(ids)
+      .getMany();
+
+    const sortedFilms = ids.map(id => films.find(f => f.id === id)!);
+
+    return [sortedFilms, count];
   }
 
   async findOne(id: string) {

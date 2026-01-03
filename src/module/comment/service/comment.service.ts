@@ -1,12 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Comment } from '../entity/comment.entity';
-import { FindOptionsWhere, IsNull, Repository } from 'typeorm';
+import { FindOptionsWhere, IsNull, Like, Repository } from 'typeorm';
 import { CreateCommentDto, UpdateCommentDto } from '../dto/comment.dto';
 import { UserService } from 'src/module/user/service/user.service';
 import { FilmService } from 'src/module/film/service/film.service';
-import { EpisodeService } from 'src/module/film/service/episode.service';
 import { ERROR_MESSAGES } from 'src/common/const/const';
 import { CommentQueryDto } from '../dto/comment-query.dto';
 import { ReviewService } from 'src/module/review/service/review.service';
@@ -21,19 +20,41 @@ export class CommentService {
     private readonly repository: Repository<Comment>,
     private readonly userService: UserService,
     private readonly filmService: FilmService,
-    private readonly episodeService: EpisodeService,
     private readonly reviewService: ReviewService,
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async find(query: PaginatedApiQuery): Promise<[Comment[], number]> {
-    return await this.repository.findAndCount({
-      where: {},
-      relations: ['author', 'replies'],
-      skip: (query.page - 1) * query.limit,
-      take: query.limit,
-      order: { createdAt: 'DESC' },
-    });
+    const qb = this.repository
+      .createQueryBuilder('comment')
+      .leftJoinAndSelect('comment.author', 'author')
+      .leftJoinAndSelect('comment.replies', 'replies')
+      .leftJoinAndSelect('comment.reports', 'reports')
+      .leftJoinAndSelect('reports.user', 'user');
+
+    if (query.sort) {
+      Object.entries(query.sort).forEach(([key, value]) => {
+        if (value !== 'ASC' && value !== 'DESC') {
+          throw new BadRequestException(
+            `thứ tự sắp xếp không hợp lệ cho ${key}: ${value}`,
+          );
+        }
+        qb.addOrderBy(`comment.${key}`, value);
+      });
+    }
+
+    if (query.search) {
+      qb.andWhere('(comment.content LIKE :search)', {
+        search: `%${query.search}%`,
+      });
+    }
+
+    const [comments, count] = await qb
+      .skip((query.page - 1) * query.limit)
+      .take(query.limit)
+      .getManyAndCount();
+
+    return [comments, count];
   }
 
   async findByFilmId(
@@ -43,11 +64,12 @@ export class CommentService {
     const where: FindOptionsWhere<Comment> = {
       reviewId: query.reviewId,
       parentId: query.parentId || IsNull(),
+      filmId,
     };
 
     return await this.repository.findAndCount({
       where,
-      relations: ['author', 'replies'],
+      relations: ['author', 'replies', 'reports', 'reports.user'],
       skip: (query.page - 1) * query.limit,
       take: query.limit,
       order: { createdAt: 'DESC' },
@@ -67,12 +89,7 @@ export class CommentService {
 
   async create(userId: string, dto: CreateCommentDto): Promise<Comment> {
     // Validate film/episode exists
-    const film =
-      dto.season && dto.episode
-        ? await this.episodeService
-            .findOne(dto.filmId, dto.season, dto.episode)
-            .then(() => this.filmService.findOne(dto.filmId))
-        : await this.filmService.findOne(dto.filmId);
+    const film = await this.filmService.findOne(dto.filmId);
 
     // Validate parent comment if replying
     let parentComment: Comment | null = null;

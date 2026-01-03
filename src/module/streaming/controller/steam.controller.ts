@@ -39,6 +39,25 @@ export class StreamController {
     private readonly watchHistoryService: WatchHistoryService,
   ) {}
 
+  @Post()
+  @ApiOperation({ summary: 'Kiểm tra video có sẵn để streaming' })
+  @ApiResponse({
+    status: 201,
+    description: 'Kiểm tra video có sẵn để streaming',
+    type: createApiResponseDto(StreamingDto),
+  })
+  async checkVideoAvailability(
+    @Query('filmId') filmId: string,
+    @Query('season') season?: number,
+    @Query('episode') episode?: number,
+  ) {
+    await this.streamService.checkVideoAvailability(
+      filmId,
+      season,
+      episode,
+    );
+  }
+
   @Get()
   @ApiOperation({ summary: 'Lấy URL streaming của phim' })
   @ApiResponse({

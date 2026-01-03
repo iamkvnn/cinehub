@@ -5,7 +5,6 @@ import { Repository } from 'typeorm';
 import { CreateReviewDto, UpdateReviewDto } from '../dto/review.dto';
 import { UserService } from 'src/module/user/service/user.service';
 import { FilmService } from 'src/module/film/service/film.service';
-import { EpisodeService } from 'src/module/film/service/episode.service';
 import { ERROR_MESSAGES } from 'src/common/const/const';
 import { PaginatedApiQuery } from 'src/common/dto';
 
@@ -16,26 +15,58 @@ export class ReviewService {
     private readonly repository: Repository<Review>,
     private readonly userService: UserService,
     private readonly filmService: FilmService,
-    private readonly episodeService: EpisodeService,
   ) {}
 
-  async find(
+  async find(query: PaginatedApiQuery): Promise<[Review[], number]> {
+    const qb = this.repository
+      .createQueryBuilder('review')
+      .leftJoinAndSelect('review.author', 'author')
+      .leftJoinAndSelect('review.reports', 'reports')
+      .leftJoinAndSelect('reports.user', 'user');
+
+    if (query.sort) {
+      Object.entries(query.sort).forEach(([key, value]) => {
+        qb.addOrderBy(`review.${key}`, value === 'ASC' ? 'ASC' : 'DESC');
+      });
+    }
+
+    const [reviews, count] = await qb
+      .skip((query.page - 1) * query.limit)
+      .take(query.limit)
+      .getManyAndCount();
+
+    return [reviews, count];
+  }
+
+  async findByFilmId(
     filmId: string,
     query: PaginatedApiQuery,
   ): Promise<[Review[], number]> {
-    return await this.repository.findAndCount({
-      where: { filmId },
-      relations: ['author', 'comments'],
-      skip: (query.page - 1) * query.limit,
-      take: query.limit,
-      order: { createdAt: 'DESC' },
-    });
+    const qb = this.repository
+      .createQueryBuilder('review')
+      .leftJoinAndSelect('review.author', 'author')
+      .leftJoinAndSelect('review.reports', 'reports')
+      .leftJoinAndSelect('reports.user', 'user')
+      .where('review.filmId = :filmId', { filmId });
+
+    if (query.sort) {
+      Object.entries(query.sort).forEach(([key, value]) => {
+        qb.addOrderBy(`review.${key}`, value === 'ASC' ? 'ASC' : 'DESC');
+      });
+    }
+
+    const [reviews, count] = await qb
+      .skip((query.page - 1) * query.limit)
+      .take(query.limit)
+      .getManyAndCount();
+
+    return [reviews, count];
   }
 
   async findOne(id: string): Promise<Review> {
     const entity = await this.repository.findOne({
       where: { id },
-      relations: ['author'],
+      relations: ['author', 'reports', 'reports.user'],
     });
     if (!entity) {
       throw new NotFoundException(ERROR_MESSAGES.NOT_FOUND);

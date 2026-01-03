@@ -261,8 +261,15 @@ export class AuthService {
       throw new UnauthorizedException('Tài khoản đã bị khóa');
     }
 
+    const { accessToken, refreshToken } = this.signTokenPair(user);
+
+    await this.userService.updateUser(user.id, {
+      refreshToken: refreshToken,
+    });
+
     return {
-      ...this.signTokenPair(user),
+      accessToken,
+      refreshToken,
       user,
     };
   }

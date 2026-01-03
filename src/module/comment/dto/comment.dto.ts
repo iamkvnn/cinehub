@@ -3,6 +3,7 @@ import { Expose, Transform, Type } from 'class-transformer';
 import { IsNumber, IsOptional, IsString, ValidateIf } from 'class-validator';
 import { BaseDto } from 'src/core/base/base.dto';
 import { UserDto } from 'src/module/user/dto/user.dto';
+import { CommentReportDto } from './comment-reaction.dto';
 
 export class CommentDto extends BaseDto {
   @ApiProperty({
@@ -72,12 +73,26 @@ export class CommentDto extends BaseDto {
   @Expose()
   @Type(() => UserDto)
   author: UserDto;
+
+  @ApiProperty({
+    description: 'Danh sách báo cáo',
+    type: () => [CommentReportDto],
+  })
+  @Expose()
+  @Type(() => CommentReportDto)
+  reports: CommentReportDto[];
+
+  @ApiProperty({
+    description: 'Đã bị báo cáo hay chưa',
+    example: true,
+  })
+  @Expose()
+  @Transform(({ obj }) => obj.reports?.length > 0)
+  isReported: boolean;
 }
 
 export class CreateCommentDto extends PickType(CommentDto, [
   'content',
-  'season',
-  'episode',
   'parentId',
 ]) {
   @ApiProperty({

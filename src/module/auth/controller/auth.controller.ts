@@ -13,10 +13,14 @@ import { RefreshDto } from '../dto/refresh.dto';
 import { ChangePassDto } from '../dto/change-pass.dto';
 import { User } from 'src/common/decorator';
 import { JwtAuthGuard } from 'src/common/guard';
+import { UserService } from 'src/module/user/service/user.service';
 @ApiTags('Auth')
 @Controller({ path: 'auth', version: '1' })
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly userService: UserService,
+  ) {}
 
   @Post('register')
   @ApiOperation({ summary: 'Đăng ký tài khoản và gửi mã OTP' })
@@ -100,6 +104,20 @@ export class AuthController {
   })
   async changePassword(@Body() dto: ChangePassDto, @User() user) {
     await this.authService.changePassword(user.id, dto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('my-info')
+  @ApiOperation({ summary: 'Lấy thông tin người dùng' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lấy thông tin người dùng thành công',
+  })
+  async getMyInfo(@User() user) {
+    const userData = await this.userService.findById(user.id);
+    return createApiResponse(
+      plainToInstance(UserDto, userData, { excludeExtraneousValues: true }),
+    );
   }
 
   @Post('login')

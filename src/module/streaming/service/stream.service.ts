@@ -7,6 +7,8 @@ import { Video } from 'src/module/film/entity/video.entity';
 import { AwsS3Service } from 'src/module/aws/service/s3.service';
 import { SubscriptionService } from 'src/module/subscription/service/subscription.service';
 import { PLAN_QUALITY_MAP } from '../const/const';
+import { UserRole } from 'src/module/user/const/user.const';
+import { PlanType } from 'src/module/plan/const/plan.const';
 
 @Injectable()
 export class StreamService {
@@ -19,22 +21,40 @@ export class StreamService {
     private readonly subscriptionService: SubscriptionService,
   ) {}
 
+  async checkVideoAvailability(
+    filmId: string,
+    season?: number,
+    episode?: number,
+  ): Promise<Video> {
+    this.filmService.verifyFilmType(filmId, season, episode);
+    const video = await this.videoService.findOne(filmId, season, episode);
+    if (video.status !== 'READY') {
+      throw new NotFoundException('Video is not available for streaming');
+    }
+    return video;
+  }
+
   async getStreamingUrl(
     userId: string,
     filmId: string,
     season?: number,
     episode?: number,
   ): Promise<string> {
-    await this.userService.findById(userId);
-    const subscription =
-      await this.subscriptionService.findActiveByUserId(userId);
-    if (!subscription) {
-      throw new ForbiddenException('User does not have an active subscription');
+    const user = await this.userService.findById(userId);
+    let allowedQualities: string[] = [];
+    if (user.role === UserRole.ADMIN) {
+      allowedQualities =
+        PLAN_QUALITY_MAP[PlanType.PREMIUM] || [];
     }
-    const allowedQualities =
-      PLAN_QUALITY_MAP[subscription.plan.planType] || [];
-    await this.filmService.verifyFilmType(filmId, season, episode);
-    const video = await this.videoService.findOne(filmId, season, episode);
+    else {
+      const subscription = await this.subscriptionService.findActiveByUserId(userId);
+        if (!subscription) {
+          throw new ForbiddenException('User does not have an active subscription');
+        }
+      allowedQualities =
+        PLAN_QUALITY_MAP[subscription.plan.planType] || [];
+    }
+    const video = await this.checkVideoAvailability(filmId, season, episode);
     let masterContent = await this.s3Service.getHLSFile(video.key);
     if (!masterContent) {
       throw new NotFoundException('HLS master file not found for video: ' + video.id);

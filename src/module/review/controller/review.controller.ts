@@ -46,6 +46,26 @@ export class ReviewController {
     private readonly reviewReactionService: ReviewReactionService,
   ) {}
 
+  @Get(':filmId')
+  @ApiOperation({ summary: 'Lấy danh sách đánh giá' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lấy danh sách đánh giá',
+    type: createPaginatedApiResponseDto(ReviewDto),
+  })
+  async getAllByFilmId(
+    @Query() query: PaginatedApiQuery,
+    @Param('filmId') filmId: string,
+  ) {
+    const [data, count] = await this.reviewService.findByFilmId(filmId, query);
+    return createPaginatedApiResponse(
+      plainToInstance(ReviewDto, data, { excludeExtraneousValues: true }),
+      count,
+      query.page,
+      query.limit,
+    );
+  }
+
   @Get()
   @ApiOperation({ summary: 'Lấy danh sách đánh giá' })
   @ApiResponse({
@@ -53,11 +73,8 @@ export class ReviewController {
     description: 'Lấy danh sách đánh giá',
     type: createPaginatedApiResponseDto(ReviewDto),
   })
-  async getAll(
-    @Query() query: PaginatedApiQuery,
-    @Query('filmId') filmId: string,
-  ) {
-    const [data, count] = await this.reviewService.find(filmId, query);
+  async getAll(@Query() query: PaginatedApiQuery) {
+    const [data, count] = await this.reviewService.find(query);
     return createPaginatedApiResponse(
       plainToInstance(ReviewDto, data, { excludeExtraneousValues: true }),
       count,

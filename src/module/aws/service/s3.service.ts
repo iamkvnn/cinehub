@@ -99,8 +99,8 @@ export class AwsS3Service {
             ContentType: this.getContentType(filePath),
           }),
         );
-        this.logger.log(`Uploaded file to S3 with key: ${key}`);
       }
+      this.logger.log(`Successfully uploaded HLS files to S3 from local directory: ${localDir} to remote prefix: ${remotePrefix}`);
     }
     catch(error){
       this.logger.error(
