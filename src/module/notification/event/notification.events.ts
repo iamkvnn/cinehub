@@ -16,6 +16,7 @@ export const NOTIFICATION_EVENT_NAMES = {
 
   // Subscription events
   SUBSCRIPTION_ACTIVATED: 'subscription.activated',
+  SUBSCRIPTION_CANCELLED: 'subscription.cancelled',
   SUBSCRIPTION_EXPIRING: 'subscription.expiring',
   SUBSCRIPTION_EXPIRED: 'subscription.expired',
   SUBSCRIPTION_RENEWED: 'subscription.renewed',
@@ -30,6 +31,12 @@ export const NOTIFICATION_EVENT_NAMES = {
   USER_REGISTERED: 'user.registered',
   USER_VERIFIED: 'user.verified',
   USER_PASSWORD_CHANGED: 'user.password_changed',
+
+  // Admin-specific events (for real-time admin panel notifications)
+  ADMIN_USER_SUBSCRIBED: 'admin.user_subscribed',
+  ADMIN_USER_UNSUBSCRIBED: 'admin.user_unsubscribed',
+  ADMIN_PAYMENT_RECEIVED: 'admin.payment_received',
+  ADMIN_PAYMENT_FAILED: 'admin.payment_failed',
 } as const;
 
 export type NotificationEventName =

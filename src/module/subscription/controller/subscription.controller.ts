@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -69,5 +69,47 @@ export class SubscriptionController {
           })
         : null,
     );
+  }
+
+  @Get('history')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Lấy lịch sử subscription của user hiện tại' })
+  @ApiResponse({
+    status: 200,
+    description: 'Danh sách tất cả subscriptions của user',
+  })
+  async getMySubscriptionHistory(@Req() req: any) {
+    const userId = this.getUserIdFromRequest(req);
+    const subscriptions = await this.subscriptionService.findByUserId(userId);
+    return createApiResponse(
+      subscriptions.map((sub) =>
+        plainToInstance(SubscriptionDto, sub, {
+          excludeExtraneousValues: true,
+        }),
+      ),
+    );
+  }
+
+  @Post('cancel')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Hủy subscription hiện tại của user' })
+  @ApiResponse({
+    status: 200,
+    description: 'Hủy subscription thành công',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Không tìm thấy subscription đang hoạt động',
+  })
+  async cancelMySubscription(@Req() req: any) {
+    const userId = this.getUserIdFromRequest(req);
+    const result = await this.subscriptionService.cancelMySubscription(userId);
+    return createApiResponse({
+      success: true,
+      message: 'Hủy subscription thành công',
+      subscription: plainToInstance(SubscriptionDto, result, {
+        excludeExtraneousValues: true,
+      }),
+    });
   }
 }

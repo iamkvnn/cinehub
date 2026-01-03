@@ -9,6 +9,7 @@ import {
 import type { RawBodyRequest } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import type { Request } from 'express';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { WebhookService } from '../service/webhook.service';
 import { Public } from 'src/common/decorator';
 import { ConfigService } from '@nestjs/config';
@@ -16,6 +17,16 @@ import Stripe from 'stripe';
 import { SubscriptionService } from 'src/module/subscription/service/subscription.service';
 import { PlanService } from 'src/module/plan/service/plan.service';
 import { SubscriptionStatus } from 'src/module/subscription/const/subscription.const';
+import { PaymentService } from 'src/module/payment/service/payment.service';
+import { PaymentStatus } from 'src/module/payment/entity/payment.entity';
+import { UserService } from 'src/module/user/service/user.service';
+import { NOTIFICATION_EVENT_NAMES } from 'src/module/notification/event/notification.events';
+import type {
+  SubscriptionEventPayload,
+  PaymentEventPayload,
+  AdminSubscriptionEventPayload,
+  AdminPaymentEventPayload,
+} from 'src/module/notification/dto/event-payload.dto';
 
 @ApiTags('Webhook')
 @Controller({
@@ -30,6 +41,9 @@ export class WebhookController {
     private readonly configService: ConfigService,
     private readonly subscriptionService: SubscriptionService,
     private readonly planService: PlanService,
+    private readonly paymentService: PaymentService,
+    private readonly userService: UserService,
+    private readonly eventEmitter: EventEmitter2,
   ) {
     const secretKey = this.configService.get<string>('stripe.secretKey')!;
     this.stripe = new Stripe(secretKey);
@@ -147,7 +161,7 @@ export class WebhookController {
     endDate.setDate(endDate.getDate() + plan.durationDays);
 
     // Tạo subscription
-    await this.subscriptionService.createSubscription({
+    const subscription = await this.subscriptionService.createSubscription({
       userId,
       planId,
       startDate,
@@ -156,6 +170,111 @@ export class WebhookController {
       stripeSubscriptionId: session.subscription as string,
       stripeCustomerId: session.customer as string,
     });
+
+    // Tạo payment record
+    // VND không có cents, các currency khác (USD, EUR) Stripe lưu theo cents
+    const currency = session.currency?.toUpperCase() || 'VND';
+    const isZeroDecimalCurrency = [
+      'VND',
+      'JPY',
+      'KRW',
+      'BIF',
+      'CLP',
+      'DJF',
+      'GNF',
+      'ISK',
+      'KMF',
+      'MGA',
+      'PYG',
+      'RWF',
+      'UGX',
+      'VUV',
+      'XAF',
+      'XOF',
+      'XPF',
+    ].includes(currency);
+    const amount = isZeroDecimalCurrency
+      ? session.amount_total || 0
+      : (session.amount_total || 0) / 100;
+
+    const payment = await this.paymentService.create({
+      userId,
+      planId,
+      subscriptionId: subscription.id,
+      amount,
+      currency,
+      status: PaymentStatus.SUCCESS,
+      stripeSessionId: session.id,
+      metadata: {
+        stripeSubscriptionId: session.subscription,
+        stripeCustomerId: session.customer,
+      },
+    });
+
+    // Emit subscription.activated event
+    const subscriptionPayload: SubscriptionEventPayload = {
+      subscriptionId: subscription.id,
+      userId,
+      planId,
+      planName: plan.name,
+      expiryDate: endDate,
+      timestamp: new Date(),
+      triggeredBy: userId,
+    };
+    this.eventEmitter.emit(
+      NOTIFICATION_EVENT_NAMES.SUBSCRIPTION_ACTIVATED,
+      subscriptionPayload,
+    );
+
+    // Emit payment.success event
+    const paymentPayload: PaymentEventPayload = {
+      paymentId: payment.id,
+      userId,
+      amount: payment.amount,
+      currency: payment.currency,
+      planName: plan.name,
+      timestamp: new Date(),
+      triggeredBy: userId,
+    };
+    this.eventEmitter.emit(
+      NOTIFICATION_EVENT_NAMES.PAYMENT_SUCCESS,
+      paymentPayload,
+    );
+
+    // Emit admin notifications
+    const user = await this.userService.findById(userId);
+    const adminSubscriptionPayload: AdminSubscriptionEventPayload = {
+      userId,
+      userName: user?.name || 'Unknown User',
+      userEmail: user?.email || '',
+      planId,
+      planName: plan.name,
+      amount: payment.amount,
+      currency: payment.currency,
+      subscriptionId: subscription.id,
+      timestamp: new Date(),
+      triggeredBy: userId,
+    };
+    this.eventEmitter.emit(
+      NOTIFICATION_EVENT_NAMES.ADMIN_USER_SUBSCRIBED,
+      adminSubscriptionPayload,
+    );
+
+    const adminPaymentPayload: AdminPaymentEventPayload = {
+      userId,
+      userName: user?.name || 'Unknown User',
+      userEmail: user?.email || '',
+      amount: payment.amount,
+      currency: payment.currency,
+      planName: plan.name,
+      paymentId: payment.id,
+      timestamp: new Date(),
+      triggeredBy: userId,
+    };
+    this.eventEmitter.emit(
+      NOTIFICATION_EVENT_NAMES.ADMIN_PAYMENT_RECEIVED,
+      adminPaymentPayload,
+    );
 
     console.log(`Subscription created for user ${userId} with plan ${planId}`);
   }

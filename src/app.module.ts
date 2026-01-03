@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { ScheduleModule } from '@nestjs/schedule';
 import { AuthModule } from './module/auth/auth.module';
 import { UserModule } from './module/user/user.module';
 import { ConfigModule } from '@nestjs/config';
@@ -37,6 +38,7 @@ import { NotificationModule } from './module/notification/notification.module';
       verboseMemoryLeak: true,
       ignoreErrors: false,
     }),
+    ScheduleModule.forRoot(),
     DatabaseModule,
     HealthcheckModule,
     FilmModule,

@@ -10,6 +10,11 @@ export enum NotificationType {
   SUCCESS = 'success',
   WARNING = 'warning',
   ERROR = 'error',
+  // Admin subscription notification types
+  ADMIN_USER_SUBSCRIBED = 'admin.user_subscribed',
+  ADMIN_USER_UNSUBSCRIBED = 'admin.user_unsubscribed',
+  ADMIN_PAYMENT_RECEIVED = 'admin.payment_received',
+  ADMIN_PAYMENT_FAILED = 'admin.payment_failed',
 }
 
 export enum NotificationStatus {

@@ -3,3 +3,4 @@ export * from './local.guard';
 export * from './role.guard';
 export * from './subscription.guard';
 export * from './plan.guard';
+export * from './admin.guard';

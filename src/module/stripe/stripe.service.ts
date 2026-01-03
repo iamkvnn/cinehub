@@ -61,4 +61,13 @@ export class StripeService {
       id: session.id,
     };
   }
+
+  /**
+   * Cancel a Stripe subscription
+   */
+  async cancelSubscription(
+    subscriptionId: string,
+  ): Promise<Stripe.Subscription> {
+    return await this.stripe.subscriptions.cancel(subscriptionId);
+  }
 }

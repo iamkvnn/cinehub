@@ -112,3 +112,32 @@ export interface UserPasswordChangedPayload extends BaseEventPayload {
   userId: string;
   email: string;
 }
+
+/**
+ * Payload for admin subscription notification events
+ * Used for real-time SSE notifications to admin panel
+ */
+export interface AdminSubscriptionEventPayload extends BaseEventPayload {
+  userId: string;
+  userName: string;
+  userEmail: string;
+  planId: string;
+  planName: string;
+  amount?: number;
+  currency?: string;
+  subscriptionId?: string;
+}
+
+/**
+ * Payload for admin payment notification events
+ */
+export interface AdminPaymentEventPayload extends BaseEventPayload {
+  userId: string;
+  userName: string;
+  userEmail: string;
+  amount: number;
+  currency: string;
+  planName?: string;
+  paymentId?: string;
+  failureReason?: string;
+}

@@ -31,7 +31,7 @@ interface PlanSeed {
 const planSeeds: PlanSeed[] = [
   // Free Plan
   {
-    id: '17a1485b-d70d-11f0-b3a9-6afd218a7d12',
+    id: '17a1485b-d70d-11f0-b3a9-6afd218a7d00',
     name: 'Free',
     description: 'Gói miễn phí. Xem phim có quảng cáo, chất lượng 480p SD.',
     price: 0,
@@ -44,7 +44,7 @@ const planSeeds: PlanSeed[] = [
   },
   // Pro Plan
   {
-    id: '27b2586c-e81e-22f1-c4b0-7bfe329b8e23',
+    id: '27b2586c-e81e-22f1-c4b0-7bfe329b8e00',
     name: 'Pro',
     description: 'Gói Pro. Xem phim không quảng cáo, chất lượng Full HD 1080p.',
     price: 100000,
@@ -57,7 +57,7 @@ const planSeeds: PlanSeed[] = [
   },
   // Premium Plan
   {
-    id: '37c3697d-f92f-33f2-d5c1-8cgf43ac9f34',
+    id: '37c3697d-f92f-33f2-d5c1-8caf43ac9f00',
     name: 'Premium',
     description: 'Gói Premium. Xem phim không quảng cáo, chất lượng 2K QHD.',
     price: 200000,
