@@ -5,9 +5,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserEntity } from './entity/user.entity';
 import { StripeModule } from '../stripe/stripe.module';
 import { AdminController } from './controller/admin.controller';
+import { MediaModule } from '../media/media.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([UserEntity]), StripeModule],
+  imports: [TypeOrmModule.forFeature([UserEntity]), StripeModule, MediaModule],
   controllers: [UserController, AdminController],
   providers: [UserService],
   exports: [UserService],

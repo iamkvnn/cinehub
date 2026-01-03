@@ -7,13 +7,15 @@ import {
   Post,
   Put,
   Query,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
 import { UserService } from '../service/user.service';
 import {
   createApiResponse,
   createPaginatedApiResponse,
 } from 'src/common/utils';
-import { ApiBody, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
+import { ApiBody, ApiConsumes, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 import { CreateUserDto, UpdateUserDto, UserDto } from '../dto/user.dto';
 import {
   createApiResponseDto,
@@ -21,6 +23,7 @@ import {
   PaginatedApiQuery,
 } from 'src/common/dto';
 import { plainToInstance } from 'class-transformer';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller({
   path: 'users',
@@ -63,13 +66,32 @@ export class UserController {
 
   @Put(':id')
   @ApiOperation({ summary: 'Cập nhật thông tin người dùng' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        avatar: {
+          type: 'string',
+          format: 'binary',
+        },
+        name: { type: 'string' },
+        gender: { type: 'string', enum: ['male', 'female'] },
+      },
+    },
+  })
+  @UseInterceptors(FileInterceptor('avatar'))
+  @ApiConsumes('multipart/form-data')
   @ApiResponse({
     status: 200,
     description: 'Cập nhật thông tin người dùng',
     type: createApiResponseDto(UserDto),
   })
-  async updateUser(@Param('id') id: string, @Body() updateDto: UpdateUserDto) {
-    const user = await this.userService.updateUser(id, updateDto);
+  async updateUser(
+    @Param('id') id: string,
+    @Body() updateDto: UpdateUserDto,
+    @UploadedFile() avatar: Express.Multer.File,
+  ) {
+    const user = await this.userService.updateUser(id, updateDto, avatar);
     return createApiResponse(
       plainToInstance(UserDto, user, { excludeExtraneousValues: true }),
     );

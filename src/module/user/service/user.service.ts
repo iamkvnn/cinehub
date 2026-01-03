@@ -12,6 +12,7 @@ import { generateOtp, hashPasswordSync } from 'src/common/utils';
 import { GoogleProfileDto } from 'src/module/auth/dto/google.dto';
 import { StripeService } from 'src/module/stripe/stripe.service';
 import { UserRole } from '../const/user.const';
+import { ImageService } from 'src/module/media/service/image.service';
 
 @Injectable()
 export class UserService {
@@ -19,6 +20,7 @@ export class UserService {
     @InjectRepository(UserEntity)
     private readonly userRepository: Repository<UserEntity>,
     private readonly stripeService: StripeService,
+    private readonly imageService: ImageService,
   ) {}
 
   async findAllUser(query: PaginatedApiQuery): Promise<[UserEntity[], number]> {
@@ -116,9 +118,18 @@ export class UserService {
   async updateUser(
     id: string,
     updateDto: Partial<UserEntity>,
+    avatar?: Express.Multer.File,
   ): Promise<UserEntity> {
     const user = await this.findById(id);
     Object.assign(user, updateDto);
+    if (avatar) {
+      if (user.avatarKey) {
+        this.imageService.deleteImage(user.avatarKey);
+      }
+      const { url, key }  = await this.imageService.uploadImage(avatar);
+      user.avatarUrl = url;
+      user.avatarKey = key;
+    }
     return this.userRepository.save(user);
   }
 
