@@ -28,6 +28,10 @@ export class UserDto extends BaseDto {
   @Expose()
   role: UserRole;
 
+  @ApiProperty()
+  @Expose()
+  isActive: boolean;
+
   @ApiProperty({
     required: false,
   })
@@ -41,6 +45,7 @@ export class CreateUserDto extends OmitType(UserDto, [
   'updatedAt',
   'deletedAt',
   'role',
+  'isActive',
   'avatarUrl'
 ]) {
   @ApiProperty()
