@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Comment } from '../entity/comment.entity';
 import { FindOptionsWhere, IsNull, Repository } from 'typeorm';
@@ -9,6 +10,8 @@ import { ERROR_MESSAGES } from 'src/common/const/const';
 import { CommentQueryDto } from '../dto/comment-query.dto';
 import { ReviewService } from 'src/module/review/service/review.service';
 import { PaginatedApiQuery } from 'src/common/dto';
+import { NOTIFICATION_EVENT_NAMES } from 'src/module/notification/event';
+import type { CommentRepliedPayload } from 'src/module/notification/dto';
 
 @Injectable()
 export class CommentService {
@@ -18,6 +21,7 @@ export class CommentService {
     private readonly userService: UserService,
     private readonly filmService: FilmService,
     private readonly reviewService: ReviewService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async find(query: PaginatedApiQuery): Promise<[Comment[], number]> {
@@ -30,7 +34,10 @@ export class CommentService {
     });
   }
 
-  async findByFilmId(filmId: string, query: CommentQueryDto): Promise<[Comment[], number]> {
+  async findByFilmId(
+    filmId: string,
+    query: CommentQueryDto,
+  ): Promise<[Comment[], number]> {
     const where: FindOptionsWhere<Comment> = {
       reviewId: query.reviewId,
       parentId: query.parentId || IsNull(),
@@ -57,14 +64,40 @@ export class CommentService {
   }
 
   async create(userId: string, dto: CreateCommentDto): Promise<Comment> {
-    await this.filmService.findOne(dto.filmId);
-    dto.parentId && (await this.findOne(dto.parentId));
+    // Validate film/episode exists
+    const film = await this.filmService.findOne(dto.filmId);
+
+    // Validate parent comment if replying
+    let parentComment: Comment | null = null;
+    if (dto.parentId) {
+      parentComment = await this.findOne(dto.parentId);
+    }
+
+    // Validate review if commenting on review
     dto.reviewId && (await this.reviewService.findOne(dto.reviewId));
+
     const user = await this.userService.findById(userId);
-    return await this.repository.save({
+    const savedComment = await this.repository.save({
       ...dto,
       author: user,
     });
+
+    // Emit comment.replied event if this is a reply
+    if (parentComment && parentComment.authorId !== userId) {
+      this.eventEmitter.emit(NOTIFICATION_EVENT_NAMES.COMMENT_REPLIED, {
+        commentId: savedComment.id,
+        parentCommentId: parentComment.id,
+        parentCommentAuthorId: parentComment.authorId,
+        filmId: dto.filmId,
+        filmTitle: film.title,
+        replyAuthorId: userId,
+        replyAuthorName: user.name || user.email,
+        replyContent: dto.content,
+        timestamp: new Date(),
+      } as CommentRepliedPayload);
+    }
+
+    return savedComment;
   }
 
   async update(

@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, DeepPartial, In, Repository } from 'typeorm';
 import { Film } from '../entity/film.entity';
@@ -15,7 +16,12 @@ import { ERROR_MESSAGES } from 'src/common/const/const';
 import { handleDbExceptions } from 'src/common/utils/handle-db-exception';
 import { FilmQueryDto } from '../dto/film-query.dto';
 import { Cast } from '../entity/cast';
-import { FilmType } from '../const/const';
+import { FilmStatus, FilmType } from '../const/const';
+import { NOTIFICATION_EVENT_NAMES } from 'src/module/notification/event';
+import {
+  FilmCreatedPayload,
+  FilmUpdatedPayload,
+} from 'src/module/notification/dto';
 
 @Injectable()
 export class FilmService {
@@ -25,11 +31,12 @@ export class FilmService {
     @InjectRepository(Film)
     private readonly filmRepo: Repository<Film>,
     private readonly videoService: VideoService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async create(dto: CreateFilmDto) {
     try {
-      return await this.dataSource.transaction(async (manager) => {
+      const savedFilm = await this.dataSource.transaction(async (manager) => {
         const filmRepo = manager.getRepository(Film);
         const genreRepo = manager.getRepository(Genre);
         const directorRepo = manager.getRepository(Director);
@@ -74,6 +81,23 @@ export class FilmService {
 
         return filmRepo.save(film);
       });
+
+      // Emit film.created event for notification
+      if (savedFilm) {
+        const film = await this.findOne(savedFilm.id);
+        this.eventEmitter.emit(NOTIFICATION_EVENT_NAMES.FILM_CREATED, {
+          filmId: film.id,
+          filmTitle: film.title,
+          filmType: film.type,
+          status: film.status,
+          posterUrl: film.posters?.[0]?.url,
+          genres: film.genres?.map((g) => g.name),
+          description: film.description,
+          timestamp: new Date(),
+        } as FilmCreatedPayload);
+      }
+
+      return savedFilm;
     } catch (error) {
       handleDbExceptions(error);
     }
@@ -160,7 +184,14 @@ export class FilmService {
   async findOne(id: string) {
     const film = await this.filmRepo.findOne({
       where: { id },
-      relations: ['posters', 'genres', 'directors', 'casts', 'casts.actor', 'seasons'],
+      relations: [
+        'posters',
+        'genres',
+        'directors',
+        'casts',
+        'casts.actor',
+        'seasons',
+      ],
     });
     if (!film) throw new NotFoundException(ERROR_MESSAGES.NOT_FOUND);
     return film;
@@ -168,7 +199,11 @@ export class FilmService {
 
   async update(id: string, dto: UpdateFilmDto) {
     try {
-      return this.dataSource.transaction(async (manager) => {
+      // Get current film state to check for status change
+      const currentFilm = await this.findOne(id);
+      const previousStatus = currentFilm.status;
+
+      const savedFilm = await this.dataSource.transaction(async (manager) => {
         const filmRepo = manager.getRepository(Film);
         const genreRepo = manager.getRepository(Genre);
         const directorRepo = manager.getRepository(Director);
@@ -208,6 +243,27 @@ export class FilmService {
         Object.assign(film, dto, { genres, directors, casts });
         return filmRepo.save(film);
       });
+
+      // Emit film.published event if status changed to RELEASING
+      if (
+        savedFilm &&
+        dto.status &&
+        dto.status === FilmStatus.RELEASING &&
+        previousStatus !== FilmStatus.RELEASING
+      ) {
+        const film = await this.findOne(savedFilm.id);
+        this.eventEmitter.emit(NOTIFICATION_EVENT_NAMES.FILM_PUBLISHED, {
+          filmId: film.id,
+          filmTitle: film.title,
+          filmType: film.type,
+          previousStatus,
+          newStatus: dto.status,
+          posterUrl: film.posters?.[0]?.url,
+          timestamp: new Date(),
+        } as FilmUpdatedPayload);
+      }
+
+      return savedFilm;
     } catch (error) {
       handleDbExceptions(error);
     }
