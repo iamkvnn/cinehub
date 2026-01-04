@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Post,
+  Delete,
   Param,
   Query,
   Body,
@@ -456,6 +457,29 @@ export class AdminNotificationController {
           type,
         },
       },
+    };
+  }
+
+  /**
+   * Delete a notification
+   * DELETE /admin/notifications/:id
+   */
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Delete a notification' })
+  @ApiParam({ name: 'id', description: 'Notification ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Notification deleted successfully',
+  })
+  @ApiResponse({ status: 404, description: 'Notification not found' })
+  async deleteNotification(@Param('id') id: string) {
+    await this.adminNotificationService.deleteNotification(id);
+
+    return {
+      success: true,
+      message: 'Notification deleted successfully',
     };
   }
 }

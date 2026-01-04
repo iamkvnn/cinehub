@@ -202,9 +202,12 @@ export class AdminNotificationService {
       .orderBy('notification.createdAt', 'DESC');
 
     if (query.type) {
-      queryBuilder.andWhere("notification.metadata->>'$.adminType' = :type", {
-        type: query.type,
-      });
+      queryBuilder.andWhere(
+        "JSON_UNQUOTE(JSON_EXTRACT(notification.metadata, '$.adminType')) = :type",
+        {
+          type: query.type,
+        },
+      );
     }
 
     if (query.targetUserId) {
@@ -302,5 +305,28 @@ export class AdminNotificationService {
     }
 
     return { id: user.id, name: user.name, email: user.email };
+  }
+
+  /**
+   * Delete a notification (soft delete - removes user_notification records)
+   */
+  async deleteNotification(notificationId: string): Promise<void> {
+    const notification = await this.notificationRepository.findOne({
+      where: { id: notificationId },
+    });
+
+    if (!notification) {
+      throw new NotFoundException(
+        `Notification with ID ${notificationId} not found`,
+      );
+    }
+
+    // Delete associated user_notification records first
+    await this.userNotificationRepository.delete({
+      notificationId: notificationId,
+    });
+
+    // Then delete the notification itself
+    await this.notificationRepository.remove(notification);
   }
 }
