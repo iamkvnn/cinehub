@@ -187,10 +187,6 @@ export class AuthService {
     const decoded = this.jwtService.decode(token) as JwtPayload;
     const user = await this.userService.findById(decoded.sub);
 
-    if (user.refreshToken !== token) {
-      throw new UnauthorizedException('Refresh token does not match');
-    }
-
     if (!user.isActive) {
       throw new UnauthorizedException('Tài khoản đã bị khóa');
     }
