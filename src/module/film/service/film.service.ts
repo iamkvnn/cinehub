@@ -269,6 +269,10 @@ export class FilmService {
     }
   }
 
+  async updateRating(filmId: string, newRating: number) {
+    await this.filmRepo.update({ id: filmId }, { userRating: newRating });
+  }
+
   async remove(id: string) {
     await this.filmRepo.delete(id);
   }
