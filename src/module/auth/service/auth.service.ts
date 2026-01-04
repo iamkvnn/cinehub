@@ -191,6 +191,10 @@ export class AuthService {
       throw new UnauthorizedException('Refresh token does not match');
     }
 
+    if (!user.isActive) {
+      throw new UnauthorizedException('Tài khoản đã bị khóa');
+    }
+
     const { accessToken, refreshToken } = this.signTokenPair(user);
 
     await this.userService.updateUser(user.id, {

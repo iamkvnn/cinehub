@@ -7,8 +7,11 @@ import {
   Post,
   Put,
   Query,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
-import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiParam, ApiResponse, ApiTags, ApiConsumes, ApiBody } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
 import {
   createApiResponseDto,
   createPaginatedApiResponseDto,
@@ -25,6 +28,7 @@ import {
 } from 'src/common/utils';
 import { plainToInstance } from 'class-transformer';
 import { DirectorService } from '../service/director.service';
+import { Gender } from 'src/module/user/const/user.const';
 
 @Controller('directors')
 @ApiTags('Directors')
@@ -64,20 +68,62 @@ export class DirectorController {
   }
 
   @Post()
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        photo: {
+          type: 'string',
+          format: 'binary',
+        },
+        name: { type: 'string' },
+        birthDate: { type: 'string', format: 'date' },
+        bio: { type: 'string' },
+        gender: { type: 'string', enum: Object.values(Gender) },
+        nationality: { type: 'string' },
+      },
+      required: ['name']
+    },
+  })
+  @ApiOperation({ summary: 'Tạo đạo diễn mới' })
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(FileInterceptor('photo'))
   @ApiResponse({
     status: 201,
     description: 'Tạo đạo diễn mới',
     type: createApiResponseDto(DirectorDto),
   })
-  async createDirector(@Body() createDto: CreateDirectorDto) {
-    const data = await this.directorService.create(createDto);
+  async createDirector(
+    @Body() createDto: CreateDirectorDto,
+    @UploadedFile() photo: Express.Multer.File,
+  ) {
+    const data = await this.directorService.create(createDto, photo);
     return createApiResponse(
       plainToInstance(DirectorDto, data, { excludeExtraneousValues: true }),
     );
   }
 
   @Put(':id')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        photo: {
+          type: 'string',
+          format: 'binary',
+        },
+        name: { type: 'string' },
+        birthDate: { type: 'string', format: 'date' },
+        bio: { type: 'string' },
+        gender: { type: 'string', enum: Object.values(Gender) },
+        nationality: { type: 'string' },
+      },
+      required: ['name']
+    },
+  })
   @ApiOperation({ summary: 'Cập nhật thông tin đạo diễn' })
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(FileInterceptor('photo'))
   @ApiResponse({
     status: 200,
     description: 'Cập nhật thông tin đạo diễn',
@@ -86,8 +132,9 @@ export class DirectorController {
   async updateDirector(
     @Param('id') id: string,
     @Body() updateDto: UpdateDirectorDto,
+    @UploadedFile() photo: Express.Multer.File,
   ) {
-    const data = await this.directorService.update(id, updateDto);
+    const data = await this.directorService.update(id, updateDto, photo);
     return createApiResponse(
       plainToInstance(DirectorDto, data, { excludeExtraneousValues: true }),
     );

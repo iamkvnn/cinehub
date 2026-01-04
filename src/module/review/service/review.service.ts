@@ -7,6 +7,7 @@ import { UserService } from 'src/module/user/service/user.service';
 import { FilmService } from 'src/module/film/service/film.service';
 import { ERROR_MESSAGES } from 'src/common/const/const';
 import { PaginatedApiQuery } from 'src/common/dto';
+import { Film } from 'src/module/film/entity/film.entity';
 
 @Injectable()
 export class ReviewService {
@@ -75,12 +76,43 @@ export class ReviewService {
   }
 
   async create(userId: string, dto: CreateReviewDto): Promise<Review> {
-    await this.filmService.findOne(dto.filmId);
+    const film = await this.filmService.findOne(dto.filmId);
     const user = await this.userService.findById(userId);
+
+    const newUserRating = await this.calculateNewUserRating(
+      film,
+      dto.rating,
+    );
+   
+    await this.filmService.updateRating(dto.filmId, newUserRating);
+
     return await this.repository.save({
       ...dto,
       author: user,
     });
+  }
+
+  private async calculateNewUserRating(
+    currentFilm: Film,
+    newReviewRating: number,
+    action: 'create' | 'update' | 'delete' = 'create',
+    oldReviewRating?: number,
+  ): Promise<number> {
+    const currentCount = await this.repository.count({ where: { filmId: currentFilm.id } });
+    const totalRating = currentFilm.userRating * currentCount;
+    if (action === 'update' && oldReviewRating !== undefined) {
+      const newTotalRating = totalRating - oldReviewRating + newReviewRating;
+      return parseFloat((newTotalRating / currentCount).toFixed(1));
+    } else if (action === 'delete' && oldReviewRating !== undefined) {
+      if (currentCount <= 1) {
+        return 0;
+      }
+      const newTotalRating = totalRating - oldReviewRating;
+      return parseFloat((newTotalRating / (currentCount - 1)).toFixed(1));
+    } else {
+      const newTotalRating = totalRating + newReviewRating;
+      return parseFloat((newTotalRating / (currentCount + 1)).toFixed(1));
+    }
   }
 
   async update(
@@ -92,6 +124,16 @@ export class ReviewService {
     if (entity.authorId !== userId) {
       throw new NotFoundException(ERROR_MESSAGES.NOT_FOUND);
     }
+    if (dto.rating !== entity.rating) {
+      const film = await this.filmService.findOne(entity.filmId);
+      const newUserRating = await this.calculateNewUserRating(
+        film,
+        dto.rating,
+        'update',
+        entity.rating,
+      );
+      await this.filmService.updateRating(entity.filmId, newUserRating);
+    }
     Object.assign(entity, dto);
     return await this.repository.save(entity);
   }
@@ -101,6 +143,14 @@ export class ReviewService {
     if (entity.authorId !== userId) {
       throw new NotFoundException(ERROR_MESSAGES.NOT_FOUND);
     }
+    const film = await this.filmService.findOne(entity.filmId);
+    const newUserRating = await this.calculateNewUserRating(
+      film,
+      entity.rating,
+      'delete',
+      entity.rating,
+    );
+    await this.filmService.updateRating(entity.filmId, newUserRating);
     await this.repository.delete({ id });
   }
 }

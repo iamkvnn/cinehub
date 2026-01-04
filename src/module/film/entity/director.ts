@@ -22,6 +22,9 @@ export class Director extends BaseEntity {
 
   @Column({ nullable: true })
   photoUrl?: string;
+  
+  @Column({ nullable: true })
+  photoKey?: string;
 
   @ManyToMany(() => Film, (film) => film.directors, { cascade: false })
   films: Film[];

@@ -8,8 +8,11 @@ import {
   Put,
   Query,
   UseGuards,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
-import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiParam, ApiResponse, ApiTags, ApiConsumes, ApiBody } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { ActorService } from '../service/actor.service';
 import {
   createApiResponseDto,
@@ -24,7 +27,7 @@ import {
 import { plainToInstance } from 'class-transformer';
 import { RoleGuard } from 'src/common/guard';
 import { HasRole } from 'src/common/decorator';
-import { UserRole } from 'src/module/user/const/user.const';
+import { Gender, UserRole } from 'src/module/user/const/user.const';
 
 @Controller('actors')
 @ApiTags('Actors')
@@ -64,6 +67,26 @@ export class ActorController {
   }
 
   @Post()
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        photo: {
+          type: 'string',
+          format: 'binary',
+        },
+        name: { type: 'string' },
+        birthDate: { type: 'string', format: 'date' },
+        bio: { type: 'string' },
+        gender: { type: 'string', enum: Object.values(Gender) },
+        nationality: { type: 'string' },
+      },
+      required: ['name']
+    },
+  })
+  @ApiOperation({ summary: 'Tạo diễn viên mới' })
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(FileInterceptor('photo'))
   @ApiResponse({
     status: 201,
     description: 'Tạo diễn viên mới',
@@ -71,15 +94,37 @@ export class ActorController {
   })
   // @UseGuards(RoleGuard)
   // @HasRole(UserRole.ADMIN)
-  async createActor(@Body() createDto: CreateActorDto) {
-    const data = await this.actorService.create(createDto);
+  async createActor(
+    @Body() createDto: CreateActorDto,
+    @UploadedFile() photo: Express.Multer.File,
+  ) {
+    const data = await this.actorService.create(createDto, photo);
     return createApiResponse(
       plainToInstance(ActorDto, data, { excludeExtraneousValues: true }),
     );
   }
 
   @Put(':id')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        photo: {
+          type: 'string',
+          format: 'binary',
+        },
+        name: { type: 'string' },
+        birthDate: { type: 'string', format: 'date' },
+        bio: { type: 'string' },
+        gender: { type: 'string', enum: Object.values(Gender) },
+        nationality: { type: 'string' },
+      },
+      required: ['name']
+    },
+  })
   @ApiOperation({ summary: 'Cập nhật thông tin diễn viên' })
+  @ApiConsumes('multipart/form-data')
+  @UseInterceptors(FileInterceptor('photo'))
   @ApiResponse({
     status: 200,
     description: 'Cập nhật thông tin diễn viên',
@@ -90,8 +135,9 @@ export class ActorController {
   async updateActor(
     @Param('id') id: string,
     @Body() updateDto: UpdateActorDto,
+    @UploadedFile() photo: Express.Multer.File,
   ) {
-    const data = await this.actorService.update(id, updateDto);
+    const data = await this.actorService.update(id, updateDto, photo);
     return createApiResponse(
       plainToInstance(ActorDto, data, { excludeExtraneousValues: true }),
     );

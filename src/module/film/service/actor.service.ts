@@ -6,12 +6,14 @@ import { CreateActorDto, UpdateActorDto } from '../dto/actor.dto';
 import { handleDbExceptions } from 'src/common/utils/handle-db-exception';
 import { PaginatedApiQuery } from 'src/common/dto';
 import { ERROR_MESSAGES } from 'src/common/const/const';
+import { ImageService } from '../../media/service/image.service';
 
 @Injectable()
 export class ActorService {
   constructor(
     @InjectRepository(Actor)
     private readonly actorRepository: Repository<Actor>,
+    private readonly imageService: ImageService,
   ) {}
 
   async find(query: PaginatedApiQuery): Promise<[Actor[], number]> {
@@ -45,17 +47,36 @@ export class ActorService {
     return actor;
   }
 
-  async create(dto: CreateActorDto): Promise<Actor> {
+  async create(dto: CreateActorDto, file?: Express.Multer.File): Promise<Actor> {
     try {
-      return await this.actorRepository.save(dto);
+      let photoUrl: string | undefined;
+      let photoKey: string | undefined;
+      if (file) {
+        const image = await this.imageService.uploadImage(file);
+        photoUrl = image.url;
+        photoKey = image.key;
+      }
+      return await this.actorRepository.save({ ...dto, photoUrl, photoKey });
     } catch (error) {
       handleDbExceptions(error);
     }
   }
 
-  async update(id: string, dto: UpdateActorDto): Promise<Actor> {
+  async update(
+    id: string,
+    dto: UpdateActorDto,
+    file?: Express.Multer.File,
+  ): Promise<Actor> {
     try {
       const actor = await this.findOne(id);
+      if (file) {
+        if (actor.photoKey) {
+          this.imageService.deleteImage(actor.photoKey);
+        }
+        const image = await this.imageService.uploadImage(file);
+        actor.photoUrl = image.url;
+        actor.photoKey = image.key;
+      }
       Object.assign(actor, dto);
       return await this.actorRepository.save(actor);
     } catch (error) {
