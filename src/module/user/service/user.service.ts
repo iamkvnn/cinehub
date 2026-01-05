@@ -1,6 +1,9 @@
 import {
   BadRequestException,
+  forwardRef,
+  Inject,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -13,14 +16,19 @@ import { GoogleProfileDto } from 'src/module/auth/dto/google.dto';
 import { StripeService } from 'src/module/stripe/stripe.service';
 import { UserRole } from '../const/user.const';
 import { ImageService } from 'src/module/media/service/image.service';
+import { SubscriptionService } from 'src/module/subscription/service/subscription.service';
 
 @Injectable()
 export class UserService {
+  private readonly logger = new Logger(UserService.name);
+
   constructor(
     @InjectRepository(UserEntity)
     private readonly userRepository: Repository<UserEntity>,
     private readonly stripeService: StripeService,
     private readonly imageService: ImageService,
+    @Inject(forwardRef(() => SubscriptionService))
+    private readonly subscriptionService: SubscriptionService,
   ) {}
 
   async findAllUser(query: PaginatedApiQuery): Promise<[UserEntity[], number]> {
@@ -107,7 +115,19 @@ export class UserService {
       stripeCustomerId: stripeCustomer.id,
       role: UserRole.USER,
     });
-    return this.userRepository.save(user);
+    const savedUser = await this.userRepository.save(user);
+
+    // Tự động tạo FREE subscription cho user mới
+    try {
+      await this.subscriptionService.createFreeSubscription(savedUser.id);
+    } catch (error) {
+      this.logger.warn(
+        `Failed to create FREE subscription for user ${savedUser.id}:`,
+        error,
+      );
+    }
+
+    return savedUser;
   }
 
   async createAdmin(createDto: CreateUserDto): Promise<UserEntity> {
@@ -176,6 +196,16 @@ export class UserService {
         stripeCustomerId: stripeCustomer.id,
       });
       await this.userRepository.save(user);
+
+      // Tự động tạo FREE subscription cho user mới đăng ký qua Google
+      try {
+        await this.subscriptionService.createFreeSubscription(user.id);
+      } catch (error) {
+        this.logger.warn(
+          `Failed to create FREE subscription for Google user ${user.id}:`,
+          error,
+        );
+      }
     }
 
     return user;

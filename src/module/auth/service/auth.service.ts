@@ -23,7 +23,6 @@ import { JwtPayload } from '../dto/jwt-payload';
 import { LoginResponseDto } from '../dto/login.response.dto';
 import { ERROR_CODE } from 'src/common/const/const';
 import { ChangePassDto } from '../dto/change-pass.dto';
-import { SubscriptionService } from 'src/module/subscription/service/subscription.service';
 
 @Injectable()
 export class AuthService {
@@ -40,7 +39,6 @@ export class AuthService {
     private readonly mailService: MailService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
-    private readonly subscriptionService: SubscriptionService,
   ) {
     this.refreshSecret = this.configService.get<string>('jwt.refresh.secret')!;
     this.refreshExpire = this.configService.get('jwt.refresh.expired');
@@ -75,17 +73,6 @@ export class AuthService {
       throw new BadRequestException('Mã OTP đã hết hạn');
     }
     await this.userService.updateUser(user.id, { isVerified: true });
-
-    // Tự động tạo FREE subscription cho user mới
-    try {
-      await this.subscriptionService.createFreeSubscription(user.id);
-    } catch (error) {
-      this.logger.warn(
-        `Failed to create FREE subscription for user ${user.id}:`,
-        error,
-      );
-      // Không throw error - user vẫn có thể đăng nhập
-    }
 
     const { accessToken, refreshToken } = this.signTokenPair(user);
 
@@ -280,17 +267,6 @@ export class AuthService {
 
     if (!user.isActive) {
       throw new UnauthorizedException('Tài khoản đã bị khóa');
-    }
-
-    // Tự động tạo FREE subscription nếu user chưa có subscription
-    try {
-      await this.subscriptionService.createFreeSubscription(user.id);
-    } catch (error) {
-      this.logger.warn(
-        `Failed to create FREE subscription for Google user ${user.id}:`,
-        error,
-      );
-      // Không throw error - user vẫn có thể đăng nhập
     }
 
     const { accessToken, refreshToken } = this.signTokenPair(user);
