@@ -73,7 +73,7 @@ export class SeasonController {
   })
   async createSeason(
     @Body() createDto: CreateSeasonDto,
-    @Query('filmId') filmId: string,
+    @Param('filmId') filmId: string,
   ) {
     const data = await this.seasonService.create(filmId, createDto);
     return createApiResponse(

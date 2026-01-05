@@ -6,3 +6,9 @@ export class StreamingDto {
   @Expose()
   url: string;
 }
+
+export class VideoStatusDto {
+  @ApiProperty({ description: 'Trạng thái của video' })
+  @Expose()
+  status: string;
+}

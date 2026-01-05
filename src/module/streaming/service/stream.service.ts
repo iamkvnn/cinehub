@@ -28,9 +28,6 @@ export class StreamService {
   ): Promise<Video> {
     this.filmService.verifyFilmType(filmId, season, episode);
     const video = await this.videoService.findOne(filmId, season, episode);
-    if (video.status !== 'READY') {
-      throw new NotFoundException('Video is not available for streaming');
-    }
     return video;
   }
 

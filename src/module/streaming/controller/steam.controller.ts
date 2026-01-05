@@ -18,13 +18,16 @@ import {
 } from '@nestjs/swagger';
 import { createApiResponseDto } from 'src/common/dto';
 import { StreamService } from '../service/stream.service';
-import { StreamingDto } from '../dto/stream.dto';
+import { StreamingDto, VideoStatusDto } from '../dto/stream.dto';
 import { JwtAuthGuard } from 'src/common/guard';
 import { User } from 'src/common/decorator/user.decorator';
 import type { Response } from 'express';
 import { WatchHistoryService } from 'src/module/watch-history/service/watch-history.service';
 import { VideoService } from 'src/module/media/service/video.service';
 import { HeartbeatDto } from '../dto/heartbeat.dto';
+import { createApiResponse } from 'src/common/utils';
+import { plainToInstance } from 'class-transformer';
+import { VideoDto } from 'src/module/media/dto/dto';
 
 @ApiTags('Streaming')
 @Controller({
@@ -44,18 +47,14 @@ export class StreamController {
   @ApiResponse({
     status: 201,
     description: 'Kiểm tra video có sẵn để streaming',
-    type: createApiResponseDto(StreamingDto),
+    type: createApiResponseDto(VideoStatusDto),
   })
   async checkVideoAvailability(
     @Query('filmId') filmId: string,
     @Query('season') season?: number,
     @Query('episode') episode?: number,
   ) {
-    await this.streamService.checkVideoAvailability(
-      filmId,
-      season,
-      episode,
-    );
+    return createApiResponse(plainToInstance(VideoStatusDto, await this.streamService.checkVideoAvailability(filmId, season, episode), { excludeExtraneousValues: true }));
   }
 
   @Get()
