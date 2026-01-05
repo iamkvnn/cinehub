@@ -53,7 +53,9 @@ export class UserService {
     return [users, count];
   }
 
-  async findAllAdmin(query: PaginatedApiQuery): Promise<[UserEntity[], number]> {
+  async findAllAdmin(
+    query: PaginatedApiQuery,
+  ): Promise<[UserEntity[], number]> {
     const qb = this.userRepository
       .createQueryBuilder('user')
       .andWhere('user.role = :role', { role: UserRole.ADMIN });
@@ -84,7 +86,12 @@ export class UserService {
   }
 
   async createUser(createDto: CreateUserDto): Promise<UserEntity> {
-    if (await this.userRepository.existsBy({ email: createDto.email, role: UserRole.USER })) {
+    if (
+      await this.userRepository.existsBy({
+        email: createDto.email,
+        role: UserRole.USER,
+      })
+    ) {
       throw new BadRequestException('Email đã được sử dụng');
     }
     const stripeCustomer = await this.stripeService.createCustomer({
@@ -104,7 +111,12 @@ export class UserService {
   }
 
   async createAdmin(createDto: CreateUserDto): Promise<UserEntity> {
-    if (await this.userRepository.existsBy({ email: createDto.email, role: UserRole.ADMIN })) {
+    if (
+      await this.userRepository.existsBy({
+        email: createDto.email,
+        role: UserRole.ADMIN,
+      })
+    ) {
       throw new BadRequestException('Email đã được sử dụng');
     }
     return this.userRepository.save({
@@ -126,7 +138,7 @@ export class UserService {
       if (user.avatarKey) {
         this.imageService.deleteImage(user.avatarKey);
       }
-      const { url, key }  = await this.imageService.uploadImage(avatar);
+      const { url, key } = await this.imageService.uploadImage(avatar);
       user.avatarUrl = url;
       user.avatarKey = key;
     }
@@ -145,15 +157,23 @@ export class UserService {
     profile: GoogleProfileDto,
   ): Promise<UserEntity> {
     let user = await this.userRepository.findOne({
-      where: { email: profile.email },
+      where: { email: profile.email, role: UserRole.USER },
     });
 
     if (!user) {
+      // Tạo Stripe customer cho user mới
+      const stripeCustomer = await this.stripeService.createCustomer({
+        email: profile.email,
+        name: profile.name,
+      });
+
       user = this.userRepository.create({
         email: profile.email,
         name: profile.name,
         password: '',
         isVerified: true,
+        role: UserRole.USER,
+        stripeCustomerId: stripeCustomer.id,
       });
       await this.userRepository.save(user);
     }
@@ -172,7 +192,9 @@ export class UserService {
   async deleteAdmin(id: string): Promise<void> {
     const user = await this.findById(id);
     if (user.role === UserRole.USER) {
-      throw new BadRequestException('Không thể xóa người dùng thường bằng phương thức này');
+      throw new BadRequestException(
+        'Không thể xóa người dùng thường bằng phương thức này',
+      );
     }
     await this.userRepository.remove(user);
   }

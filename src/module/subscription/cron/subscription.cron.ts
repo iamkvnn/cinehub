@@ -68,30 +68,30 @@ export class SubscriptionCronService {
 
   /**
    * Check and expire past-due subscriptions daily at midnight
+   * Also creates FREE subscription for cancelled subscriptions that have ended
    */
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async handleExpiredSubscriptions() {
     this.logger.log('Running expired subscriptions check...');
 
     try {
-      // Find subscriptions that should be expired but still active
-      const now = new Date();
+      // Find ACTIVE subscriptions that are past their endDate
       const expiredSubs =
-        await this.subscriptionService.findExpiringSubscriptions(0);
-
-      // Filter for already past endDate
-      const pastDueSubs = expiredSubs.filter(
-        (sub) => new Date(sub.endDate) < now,
-      );
+        await this.subscriptionService.findExpiredActiveSubscriptions();
 
       this.logger.log(
-        `Found ${pastDueSubs.length} past-due subscriptions to expire`,
+        `Found ${expiredSubs.length} past-due subscriptions to expire`,
       );
 
-      for (const subscription of pastDueSubs) {
-        // Update status to expired
+      for (const subscription of expiredSubs) {
+        // Check if this subscription was cancelled (won't renew)
+        const wasCancelled = subscription.cancelledAt !== null;
+
+        // Update status to expired or cancelled
         await this.subscriptionService.updateSubscription(subscription.id, {
-          status: SubscriptionStatus.EXPIRED,
+          status: wasCancelled
+            ? SubscriptionStatus.CANCELLED
+            : SubscriptionStatus.EXPIRED,
         });
 
         // Emit expired event
@@ -108,8 +108,29 @@ export class SubscriptionCronService {
           payload,
         );
 
-        this.logger.log(`Expired subscription ${subscription.id}`);
+        this.logger.log(
+          `Expired subscription ${subscription.id} (wasCancelled: ${wasCancelled})`,
+        );
+
+        // If cancelled, create FREE subscription for user
+        if (wasCancelled) {
+          try {
+            await this.subscriptionService.createFreeSubscription(
+              subscription.userId,
+            );
+            this.logger.log(
+              `Created FREE subscription for user ${subscription.userId} after cancellation`,
+            );
+          } catch (error) {
+            this.logger.error(
+              `Failed to create FREE subscription for user ${subscription.userId}: ${error.message}`,
+            );
+          }
+        }
       }
+
+      // Process scheduled plan changes (downgrade)
+      await this.subscriptionService.processScheduledChanges();
     } catch (error) {
       this.logger.error(
         `Failed to process expired subscriptions: ${error.message}`,

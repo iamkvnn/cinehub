@@ -29,13 +29,13 @@ interface PlanSeed {
 }
 
 const planSeeds: PlanSeed[] = [
-  // Free Plan
+  // Free Plan - 100 năm (vĩnh viễn)
   {
     id: '17a1485b-d70d-11f0-b3a9-6afd218a7d00',
     name: 'Free',
-    description: 'Gói miễn phí. Xem phim có quảng cáo, chất lượng 480p SD.',
+    description: 'Gói miễn phí. Xem phim có quảng cáo, chất lượng HD 720p.',
     price: 0,
-    durationDays: 30,
+    durationDays: 36500, // 100 năm - subscription vĩnh viễn
     stripeProductId: 'prod_TaXsu4u0WLzuTP',
     stripePriceId: 'price_1SdMml2caDcXa36zcaYREhfW',
     billingCycle: BillingCycle.MONTHLY,

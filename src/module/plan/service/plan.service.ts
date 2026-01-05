@@ -4,10 +4,11 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Not, Repository } from 'typeorm';
 import { PlanEntity } from '../entity/plan.entity';
 import { PaginatedApiQuery } from 'src/common/dto/paginated-query.dto';
 import { CreatePlanDto, UpdatePlanDto } from '../dto/plan.dto';
+import { PlanType } from '../const/plan.const';
 
 @Injectable()
 export class PlanService {
@@ -56,10 +57,29 @@ export class PlanService {
     return plan;
   }
 
+  /**
+   * Lấy danh sách plans cho user (ẩn gói FREE)
+   * User mặc định được cấp gói FREE khi đăng ký, không cần thấy trong danh sách
+   */
   async findActivePlans(): Promise<PlanEntity[]> {
     return this.planRepository.find({
-      where: { isActive: true },
+      where: {
+        isActive: true,
+        planType: Not(PlanType.FREE),
+      },
       order: { price: 'ASC' },
+    });
+  }
+
+  /**
+   * Tìm gói FREE để tự động cấp cho user mới
+   */
+  async findFreePlan(): Promise<PlanEntity | null> {
+    return this.planRepository.findOne({
+      where: {
+        planType: PlanType.FREE,
+        isActive: true,
+      },
     });
   }
 

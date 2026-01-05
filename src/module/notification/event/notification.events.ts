@@ -21,6 +21,8 @@ export const NOTIFICATION_EVENT_NAMES = {
   SUBSCRIPTION_EXPIRED: 'subscription.expired',
   SUBSCRIPTION_RENEWED: 'subscription.renewed',
   SUBSCRIPTION_UPGRADED: 'subscription.upgraded',
+  SUBSCRIPTION_DOWNGRADE_SCHEDULED: 'subscription.downgrade_scheduled',
+  SUBSCRIPTION_DOWNGRADE_CANCELLED: 'subscription.downgrade_cancelled',
 
   // Payment events
   PAYMENT_SUCCESS: 'payment.success',

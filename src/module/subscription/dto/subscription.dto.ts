@@ -66,6 +66,21 @@ export class SubscriptionDto extends BaseDto {
   cancelledAt?: Date;
 
   @ApiProperty({
+    description: 'Scheduled Plan ID for downgrade',
+    required: false,
+  })
+  @IsUUID()
+  @IsOptional()
+  @Expose()
+  scheduledPlanId?: string;
+
+  @ApiProperty({ description: 'Scheduled change date', required: false })
+  @IsDateString()
+  @IsOptional()
+  @Expose()
+  scheduledChangeAt?: Date;
+
+  @ApiProperty({
     description: 'Thông tin user',
     type: () => UserDto,
     required: false,

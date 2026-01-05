@@ -70,4 +70,26 @@ export class StripeService {
   ): Promise<Stripe.Subscription> {
     return await this.stripe.subscriptions.cancel(subscriptionId);
   }
+
+  /**
+   * Cancel a Stripe subscription at the end of the current billing period
+   */
+  async cancelSubscriptionAtPeriodEnd(
+    subscriptionId: string,
+  ): Promise<Stripe.Subscription> {
+    return await this.stripe.subscriptions.update(subscriptionId, {
+      cancel_at_period_end: true,
+    });
+  }
+
+  /**
+   * Reactivate a subscription that was set to cancel at period end
+   */
+  async reactivateSubscription(
+    subscriptionId: string,
+  ): Promise<Stripe.Subscription> {
+    return await this.stripe.subscriptions.update(subscriptionId, {
+      cancel_at_period_end: false,
+    });
+  }
 }

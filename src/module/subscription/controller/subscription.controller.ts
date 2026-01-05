@@ -1,4 +1,12 @@
-import { Controller, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  Post,
+  Req,
+  UseGuards,
+  BadRequestException,
+} from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -12,6 +20,8 @@ import { createApiResponseDto } from 'src/common/dto';
 import { SubscriptionService } from '../service/subscription.service';
 import { SubscriptionDto } from '../dto/subscription.dto';
 import { JwtAuthGuard } from 'src/common/guard/jwt.guard';
+import { PlanService } from 'src/module/plan/service/plan.service';
+import { isUpgrade, isDowngrade } from 'src/module/plan/const/plan.const';
 
 @ApiTags('Subscriptions')
 @Controller({
@@ -20,7 +30,10 @@ import { JwtAuthGuard } from 'src/common/guard/jwt.guard';
 })
 @ApiBearerAuth()
 export class SubscriptionController {
-  constructor(private readonly subscriptionService: SubscriptionService) {}
+  constructor(
+    private readonly subscriptionService: SubscriptionService,
+    private readonly planService: PlanService,
+  ) {}
 
   /**
    * Lấy userId từ JWT payload
@@ -111,5 +124,74 @@ export class SubscriptionController {
         excludeExtraneousValues: true,
       }),
     });
+  }
+
+  @Post('upgrade/:planId')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Nâng cấp subscription lên gói cao hơn' })
+  @ApiParam({ name: 'planId', description: 'ID của plan muốn upgrade lên' })
+  @ApiResponse({
+    status: 200,
+    description: 'Trả về URL checkout để thanh toán',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Gói mới phải cao hơn gói hiện tại',
+  })
+  async upgradeSubscription(@Req() req: any, @Param('planId') planId: string) {
+    const userId = this.getUserIdFromRequest(req);
+    const result = await this.subscriptionService.upgradeSubscription(
+      userId,
+      planId,
+    );
+    return createApiResponse(result);
+  }
+
+  @Post('downgrade/:planId')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({
+    summary: 'Hạ cấp subscription xuống gói thấp hơn (có hiệu lực cuối kỳ)',
+  })
+  @ApiParam({ name: 'planId', description: 'ID của plan muốn downgrade xuống' })
+  @ApiResponse({
+    status: 200,
+    description: 'Đặt lịch downgrade thành công',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Gói mới phải thấp hơn gói hiện tại',
+  })
+  async downgradeSubscription(
+    @Req() req: any,
+    @Param('planId') planId: string,
+  ) {
+    const userId = this.getUserIdFromRequest(req);
+    const result = await this.subscriptionService.downgradeSubscription(
+      userId,
+      planId,
+    );
+    return createApiResponse(
+      plainToInstance(SubscriptionDto, result, {
+        excludeExtraneousValues: true,
+      }),
+    );
+  }
+
+  @Post('cancel-downgrade')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Hủy lịch downgrade đã đặt' })
+  @ApiResponse({
+    status: 200,
+    description: 'Hủy lịch downgrade thành công',
+  })
+  async cancelScheduledDowngrade(@Req() req: any) {
+    const userId = this.getUserIdFromRequest(req);
+    const result =
+      await this.subscriptionService.cancelScheduledDowngrade(userId);
+    return createApiResponse(
+      plainToInstance(SubscriptionDto, result, {
+        excludeExtraneousValues: true,
+      }),
+    );
   }
 }

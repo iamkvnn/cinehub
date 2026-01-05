@@ -41,4 +41,16 @@ export class SubscriptionEntity extends BaseEntity {
 
   @Column({ type: 'datetime', nullable: true })
   cancelledAt?: Date;
+
+  /**
+   * Scheduled plan ID for downgrade (will take effect at endDate)
+   */
+  @Column({ nullable: true })
+  scheduledPlanId?: string;
+
+  /**
+   * When the scheduled change will take effect
+   */
+  @Column({ type: 'datetime', nullable: true })
+  scheduledChangeAt?: Date;
 }

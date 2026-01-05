@@ -146,13 +146,8 @@ export class WebhookController {
       return;
     }
 
-    // Kiểm tra user đã có subscription active chưa
-    const hasActive =
-      await this.subscriptionService.hasActiveSubscription(userId);
-    if (hasActive) {
-      console.log('User already has active subscription, skipping...');
-      return;
-    }
+    // Note: Không cần gọi cancelFreeSubscriptionIfExists vì createSubscription
+    // sẽ tự động cancel FREE subscription khi tạo paid subscription
 
     // Lấy thông tin plan để tính endDate
     const plan = await this.planService.findById(planId);
@@ -160,7 +155,7 @@ export class WebhookController {
     const endDate = new Date();
     endDate.setDate(endDate.getDate() + plan.durationDays);
 
-    // Tạo subscription
+    // Tạo subscription (sẽ tự động cancel FREE nếu có)
     const subscription = await this.subscriptionService.createSubscription({
       userId,
       planId,
