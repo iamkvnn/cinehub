@@ -1,6 +1,8 @@
 import {
   BadRequestException,
   ForbiddenException,
+  forwardRef,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -34,6 +36,7 @@ export class SubscriptionService {
     @InjectRepository(SubscriptionEntity)
     private readonly subscriptionRepository: Repository<SubscriptionEntity>,
     private readonly planService: PlanService,
+    @Inject(forwardRef(() => UserService))
     private readonly userService: UserService,
     private readonly stripeService: StripeService,
     private readonly eventEmitter: EventEmitter2,

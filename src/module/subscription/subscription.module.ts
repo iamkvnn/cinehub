@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { SubscriptionEntity } from './entity/subscription.entity';
 import { SubscriptionController } from './controller/subscription.controller';
@@ -14,7 +14,7 @@ import { TestSubscriptionController } from './controller/test-subscription.contr
   imports: [
     TypeOrmModule.forFeature([SubscriptionEntity]),
     PlanModule,
-    UserModule,
+    forwardRef(() => UserModule),
     StripeModule,
   ],
   controllers: [
