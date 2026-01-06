@@ -8,6 +8,7 @@ import { FilmService } from 'src/module/film/service/film.service';
 import { ERROR_MESSAGES } from 'src/common/const/const';
 import { PaginatedApiQuery } from 'src/common/dto';
 import { Film } from 'src/module/film/entity/film.entity';
+import { UserRole } from 'src/module/user/const/user.const';
 
 @Injectable()
 export class ReviewService {
@@ -140,7 +141,8 @@ export class ReviewService {
 
   async delete(userId: string, id: string): Promise<void> {
     const entity = await this.findOne(id);
-    if (entity.authorId !== userId) {
+    const user = await this.userService.findById(userId);
+    if (entity.authorId !== userId && user.role !== UserRole.ADMIN) {
       throw new NotFoundException(ERROR_MESSAGES.NOT_FOUND);
     }
     const film = await this.filmService.findOne(entity.filmId);

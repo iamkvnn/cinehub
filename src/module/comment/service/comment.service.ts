@@ -12,6 +12,7 @@ import { ReviewService } from 'src/module/review/service/review.service';
 import { PaginatedApiQuery } from 'src/common/dto';
 import { NOTIFICATION_EVENT_NAMES } from 'src/module/notification/event';
 import type { CommentRepliedPayload } from 'src/module/notification/dto';
+import { UserRole } from 'src/module/user/const/user.const';
 
 @Injectable()
 export class CommentService {
@@ -139,7 +140,8 @@ export class CommentService {
 
   async delete(userId: string, id: string): Promise<void> {
     const entity = await this.findOne(id);
-    if (entity.authorId !== userId) {
+    const user = await this.userService.findById(userId);
+    if (entity.authorId !== userId && user.role !== UserRole.ADMIN) {
       throw new NotFoundException(ERROR_MESSAGES.NOT_FOUND);
     }
     await this.repository.delete({ id });
