@@ -1,0 +1,21 @@
+version: "3.9"
+
+services:
+  mysql:
+    image: bitnami/mysql:9.3
+    container_name: mysql_container
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: cinehub
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_cinehub_data:/var/lib/mysql
+    networks:
+      - mysql_network
+
+volumes:
+  mysql_cinehub_data:
+networks:
+  mysql_network:

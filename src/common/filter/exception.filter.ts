@@ -7,6 +7,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
+import { ERROR_CODE } from '../const/const';
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
@@ -18,8 +19,9 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const request = ctx.getRequest<Request>();
 
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
-    let message = 'Internal server error';
+    let message = 'Unknown error occurred';
     let errors: any = null;
+    let code: ERROR_CODE | null = null;
 
     if (exception instanceof HttpException) {
       status = exception.getStatus();
@@ -31,19 +33,23 @@ export class HttpExceptionFilter implements ExceptionFilter {
         const obj = res as Record<string, any>;
         message = obj.message || message;
         errors = obj.errors ?? null;
+        code = obj.code ?? null;
       }
     }
 
     this.logger.error(
-      `${request.method} ${request.url} → ${status} | ${message}`, exception instanceof Error ? exception.stack : '',
+      `${request.method} ${request.url} → ${status} | ${message}`,
+      status === HttpStatus.INTERNAL_SERVER_ERROR
+        ? (exception as Error).stack
+        : '',
     );
 
     response.status(status).json({
-      statusCode: status,
+      success: false,
       message,
-      errors,
+      errors: errors ?? undefined,
+      code: code ?? undefined,
       path: request.url,
-      method: request.method,
       timestamp: new Date().toISOString(),
     });
   }

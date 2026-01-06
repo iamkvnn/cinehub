@@ -1,9 +1,14 @@
-import { NestFactory, Reflector } from '@nestjs/core';
+import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ConsoleLogger, ValidationPipe, VersioningType } from '@nestjs/common';
 import { validationPipeOptions } from './common/pipe';
 import { HttpExceptionFilter } from './common/filter';
-import { HttpLoggingInterceptor } from './common/interceptor';
+import {
+  HttpLoggingInterceptor,
+  ResponseTransformInterceptor,
+} from './common/interceptor';
+import { DocumentBuilder } from '@nestjs/swagger/dist/document-builder';
+import { SwaggerModule } from '@nestjs/swagger/dist/swagger-module';
 import { JwtAuthGuard } from './common/guard';
 declare const module: any;
 
@@ -13,23 +18,43 @@ async function bootstrap() {
       json: false,
       prefix: 'CineHub',
     }),
+    rawBody: true, // Enable raw body for webhook signature verification
   });
-  app.enableCors();
+  app.enableCors({
+    origin: '*',
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    preflightContinue: false,
+    optionsSuccessStatus: 204,
+  });
   app.setGlobalPrefix('api');
   app.enableVersioning({
-    type:  VersioningType.URI,
+    type: VersioningType.URI,
     defaultVersion: '1',
   });
 
   app.useGlobalPipes(new ValidationPipe(validationPipeOptions));
   app.useGlobalFilters(new HttpExceptionFilter());
-  app.useGlobalInterceptors(new HttpLoggingInterceptor());
+  app.useGlobalInterceptors(
+    new HttpLoggingInterceptor(),
+    new ResponseTransformInterceptor(),
+  );
 
   // const jwtAuthGuard = app.get(JwtAuthGuard);
   // app.useGlobalGuards(jwtAuthGuard);
 
+  const config = new DocumentBuilder()
+    .setTitle('CineHub API')
+    .setDescription('The CineHub API description')
+    .addBearerAuth()
+    .setVersion('1.0')
+    .build();
+  const documentFactory = () => SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api/v1/api-docs', app, documentFactory, {
+    jsonDocumentUrl: 'api/v1/api-docs-json',
+  });
+
   app.enableShutdownHooks();
-  await app.listen(process.env.PORT ?? 3000);
+  await app.listen(process.env.PORT ?? 8080);
 
   if (module.hot) {
     module.hot.accept();
