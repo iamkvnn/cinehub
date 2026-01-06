@@ -20,7 +20,7 @@ Dự án backend cho hệ thống xem phim CineHub, được xây dựng bằng 
 
 1. **Clone dự án:**
    ```bash
-   git clone <repo_url>
+   git clone https://github.com/iamkvnn/cinehub
    cd cinehub
    ```
 
