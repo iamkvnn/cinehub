@@ -9,6 +9,7 @@ import { RegisterDto, VerifyEmailDto } from '../dto/register.dto';
 import {
   comparePassword,
   generateOtp,
+  generateRandomPassword,
   hashPasswordSync,
 } from 'src/common/utils';
 import { MailService } from 'src/core/mail/mail.service';
@@ -73,6 +74,8 @@ export class AuthService {
       throw new BadRequestException('Mã OTP đã hết hạn');
     }
     await this.userService.updateUser(user.id, { isVerified: true });
+
+    await this.mailService.sendVerificationSuccessEmail(user.email, user.name);
 
     const { accessToken, refreshToken } = this.signTokenPair(user);
 
@@ -258,8 +261,20 @@ export class AuthService {
     const tokenResponse = await this.exchangeCodeForToken(code, codeVerifier);
     const userInfo = await this.getGoogleUserInfo(tokenResponse.access_token);
 
-    const user: UserEntity =
+    const { user, isNew } =
       await this.userService.findOrCreateByGoogleProfile(userInfo);
+
+    if (isNew) {
+      const randomPassword = generateRandomPassword();
+      await this.userService.updateUser(user.id, {
+        password: hashPasswordSync(randomPassword),
+      });
+      await this.mailService.sendGoogleWelcomeEmail(
+        user.email,
+        randomPassword,
+        user.name,
+      );
+    }
 
     if (!user.isActive) {
       throw new UnauthorizedException('Tài khoản đã bị khóa');

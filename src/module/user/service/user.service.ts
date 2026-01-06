@@ -175,12 +175,14 @@ export class UserService {
 
   async findOrCreateByGoogleProfile(
     profile: GoogleProfileDto,
-  ): Promise<UserEntity> {
+  ): Promise<{ user: UserEntity; isNew: boolean }> {
     let user = await this.userRepository.findOne({
       where: { email: profile.email, role: UserRole.USER },
     });
+    let isNew = false;
 
     if (!user) {
+      isNew = true;
       // Tạo Stripe customer cho user mới
       const stripeCustomer = await this.stripeService.createCustomer({
         email: profile.email,
@@ -208,7 +210,7 @@ export class UserService {
       }
     }
 
-    return user;
+    return { user, isNew };
   }
 
   async findById(id: string): Promise<UserEntity> {
